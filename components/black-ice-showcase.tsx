@@ -5,19 +5,24 @@ import { initializeApp } from "firebase/app"
 import { getDatabase, ref, onValue } from "firebase/database"
 import { Search, Plus, Star, Home, ChevronRight, ExternalLink, Menu, X } from "lucide-react"
 
-// --- Firebase Config (Keep your existing config) ---
-const firebaseConfig = {
-  apiKey: "AIzaSyAp9kCBsDLnQEmR7wWHXwt3FB2T1zDtiqU",
-  authDomain: "h-90-8a7c5.firebaseapp.com",
-  databaseURL: "https://h-90-8a7c5-default-rtdb.firebaseio.com",
-  projectId: "h-90-8a7c5",
-  storageBucket: "h-90-8a7c5.firebasestorage.app",
-  messagingSenderId: "367196609301",
-  appId: "1:367196609301:web:156e24c1b4532c26af671c",
+let app
+let db
+const initFirebase = () => {
+  if (!app) {
+    const firebaseConfig = {
+      apiKey: "AIzaSyAp9kCBsDLnQEmR7wWHXwt3FB2T1zDtiqU",
+      authDomain: "h-90-8a7c5.firebaseapp.com",
+      databaseURL: "https://h-90-8a7c5-default-rtdb.firebaseio.com",
+      projectId: "h-90-8a7c5",
+      storageBucket: "h-90-8a7c5.firebasestorage.app",
+      messagingSenderId: "367196609301",
+      appId: "1:367196609301:web:156e24c1b4532c26af671c",
+    }
+    app = initializeApp(firebaseConfig)
+    db = getDatabase(app)
+  }
+  return db
 }
-
-const app = initializeApp(firebaseConfig)
-const db = getDatabase(app)
 
 const BlackIceShowcase = () => {
   const [projects, setProjects] = useState([])
@@ -25,19 +30,23 @@ const BlackIceShowcase = () => {
   const [activeTitle, setActiveTitle] = useState("Home")
   const [favorites, setFavorites] = useState([])
   const [searchQuery, setSearchQuery] = useState("")
-
-  // Default to open on desktop, closed on mobile
-  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const [loading, setLoading] = useState(true)
 
   // Load Favorites
   useEffect(() => {
+    if (typeof window === "undefined") return
     const savedFavs = JSON.parse(localStorage.getItem("bi_favorites") || "[]")
     setFavorites(savedFavs)
   }, [])
 
-  // Handle Resize
   useEffect(() => {
+    if (typeof window === "undefined") return
+
+    if (window.innerWidth <= 768) {
+      setSidebarOpen(false)
+    }
+
     const handleResize = () => {
       if (window.innerWidth > 768) {
         setSidebarOpen(true)
@@ -62,9 +71,9 @@ const BlackIceShowcase = () => {
     localStorage.setItem("bi_favorites", JSON.stringify(newFavs))
   }
 
-  // Fetch Projects
   useEffect(() => {
-    const projectsRef = ref(db, "sites")
+    const database = initFirebase()
+    const projectsRef = ref(database, "sites")
     const unsubscribe = onValue(projectsRef, (snapshot) => {
       const data = snapshot.val()
       if (data) {
@@ -92,8 +101,7 @@ const BlackIceShowcase = () => {
   const handleProjectSelect = (url, title) => {
     setActiveUrl(url)
     setActiveTitle(title)
-    // Close sidebar only on mobile
-    if (window.innerWidth < 768) {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
       setSidebarOpen(false)
     }
   }
@@ -475,7 +483,12 @@ const BlackIceShowcase = () => {
                     onClick={() => handleProjectSelect(p.url, p.title)}
                   >
                     <div className="card-thumb-wrapper">
-                      <img src={getScreenshotUrl(p.url)} className="card-thumb" loading="lazy" alt="" />
+                      <img
+                        src={getScreenshotUrl(p.url) || "/placeholder.svg"}
+                        className="card-thumb"
+                        loading="lazy"
+                        alt=""
+                      />
                     </div>
                     <div className="card-info">
                       <div className="card-title">{p.title}</div>
@@ -502,7 +515,7 @@ const BlackIceShowcase = () => {
               >
                 <div className="card-thumb-wrapper">
                   <img
-                    src={getScreenshotUrl(p.url)}
+                    src={getScreenshotUrl(p.url) || "/placeholder.svg"}
                     className="card-thumb"
                     loading="lazy"
                     alt=""
