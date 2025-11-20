@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect, useMemo } from "react"
 import { initializeApp } from "firebase/app"
 import { getDatabase, ref, onValue } from "firebase/database"
@@ -25,10 +27,10 @@ const initFirebase = () => {
 }
 
 const BlackIceShowcase = () => {
-  const [projects, setProjects] = useState([])
+  const [projects, setProjects] = useState<any[]>([])
   const [activeUrl, setActiveUrl] = useState("https://black-ice-3dbk.onrender.com")
   const [activeTitle, setActiveTitle] = useState("Home")
-  const [favorites, setFavorites] = useState([])
+  const [favorites, setFavorites] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [loading, setLoading] = useState(true)
@@ -59,7 +61,7 @@ const BlackIceShowcase = () => {
   }, [])
 
   // Toggle Favorite
-  const toggleFavorite = (e, projectId) => {
+  const toggleFavorite = (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation()
     let newFavs
     if (favorites.includes(projectId)) {
@@ -78,7 +80,7 @@ const BlackIceShowcase = () => {
       const data = snapshot.val()
       if (data) {
         const list = Object.entries(data)
-          .map(([id, val]) => ({
+          .map(([id, val]: [string, any]) => ({
             id,
             ...val,
             timestamp: val.timestamp || 0,
@@ -92,13 +94,21 @@ const BlackIceShowcase = () => {
   }, [])
 
   const filteredProjects = useMemo(() => {
-    return projects.filter((p) => p.title?.toLowerCase().includes(searchQuery.toLowerCase()))
+    return projects.filter((p) => (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()))
   }, [projects, searchQuery])
 
-  const getScreenshotUrl = (url) =>
-    `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`
+  const getScreenshotUrl = (url: string) =>
+    `https://api.microlink.io/?url=${encodeURIComponent(url || "")}&screenshot=true&meta=false&embed=screenshot.url`
 
-  const handleProjectSelect = (url, title) => {
+  const getHostname = (url: string) => {
+    try {
+      return new URL(url).hostname
+    } catch (e) {
+      return "Unknown"
+    }
+  }
+
+  const handleProjectSelect = (url: string, title: string) => {
     setActiveUrl(url)
     setActiveTitle(title)
     if (typeof window !== "undefined" && window.innerWidth < 768) {
@@ -492,7 +502,7 @@ const BlackIceShowcase = () => {
                     </div>
                     <div className="card-info">
                       <div className="card-title">{p.title}</div>
-                      <div className="card-url">{new URL(p.url).hostname}</div>
+                      <div className="card-url">{getHostname(p.url)}</div>
                     </div>
                     <button className="fav-btn active" onClick={(e) => toggleFavorite(e, p.id)}>
                       <Star size={16} fill="#eab308" />
@@ -519,12 +529,12 @@ const BlackIceShowcase = () => {
                     className="card-thumb"
                     loading="lazy"
                     alt=""
-                    onError={(e) => (e.target.src = "https://via.placeholder.com/50/333/666?text=?")}
+                    onError={(e) => (e.currentTarget.src = "https://via.placeholder.com/50/333/666?text=?")}
                   />
                 </div>
                 <div className="card-info">
                   <div className="card-title">{p.title || "Untitled"}</div>
-                  <div className="card-url">{new URL(p.url).hostname}</div>
+                  <div className="card-url">{getHostname(p.url)}</div>
                 </div>
                 <button
                   className={`fav-btn ${favorites.includes(p.id) ? "active" : ""}`}
