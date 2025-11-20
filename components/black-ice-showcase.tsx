@@ -408,7 +408,7 @@ const BlackIceShowcase = () => {
       <aside className={`sidebar ${sidebarOpen ? "open" : "closed"}`}>
         <div className="sidebar-header">
           <div className="sidebar-top-row">
-            <div className="sidebar-title">BlackICE Browser</div>
+            <div className="sidebar-title">BlackICE OS</div>
             <button className="close-sidebar-btn" onClick={() => setSidebarOpen(false)}>
               <X size={24} />
             </button>
