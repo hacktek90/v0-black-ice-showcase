@@ -20,6 +20,7 @@ import {
   RefreshCw,
   Monitor,
   Clock,
+  Smartphone,
 } from "lucide-react"
 
 const initFirebase = () => {
@@ -42,6 +43,7 @@ const initFirebase = () => {
 }
 
 const BlackIceShowcase = () => {
+  const [isMobile, setIsMobile] = useState(false)
   const [projects, setProjects] = useState<any[]>([])
   const [activeUrl, setActiveUrl] = useState("https://black-ice-3dbk.onrender.com")
   const [activeTitle, setActiveTitle] = useState("Home")
@@ -55,6 +57,21 @@ const BlackIceShowcase = () => {
   const [startMenuOpen, setStartMenuOpen] = useState(false)
   const [isSleeping, setIsSleeping] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const checkMobile = () => {
+      const isMobileDevice =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        window.innerWidth <= 768
+      setIsMobile(isMobileDevice)
+    }
+
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -155,6 +172,95 @@ const BlackIceShowcase = () => {
     if (typeof window !== "undefined" && window.innerWidth < 768) {
       setSidebarOpen(false)
     }
+  }
+
+  if (isMobile) {
+    return (
+      <div
+        style={{
+          width: "100vw",
+          height: "100vh",
+          background: "linear-gradient(135deg, #0a0a0f 0%, #1a1a24 100%)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "20px",
+          textAlign: "center",
+          color: "#f1f5f9",
+        }}
+      >
+        <div
+          style={{
+            width: "80px",
+            height: "80px",
+            background: "rgba(59, 130, 246, 0.1)",
+            borderRadius: "20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "24px",
+            border: "2px solid rgba(59, 130, 246, 0.3)",
+          }}
+        >
+          <Smartphone size={40} color="#3b82f6" />
+        </div>
+
+        <h1
+          style={{
+            fontSize: "1.5rem",
+            fontWeight: "600",
+            marginBottom: "12px",
+            color: "#f1f5f9",
+          }}
+        >
+          Not Supported on Mobile
+        </h1>
+
+        <p
+          style={{
+            fontSize: "0.95rem",
+            color: "#94a3b8",
+            marginBottom: "32px",
+            maxWidth: "320px",
+            lineHeight: "1.6",
+          }}
+        >
+          BlackICE OS is optimized for desktop. Please visit our mobile-friendly version for the best experience.
+        </p>
+
+        <a
+          href="https://black-ice-3dbk.onrender.com"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "14px 28px",
+            background: "#3b82f6",
+            color: "white",
+            textDecoration: "none",
+            borderRadius: "12px",
+            fontSize: "0.95rem",
+            fontWeight: "500",
+            transition: "all 0.2s",
+            boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#2563eb"
+            e.currentTarget.style.transform = "translateY(-2px)"
+            e.currentTarget.style.boxShadow = "0 6px 16px rgba(59, 130, 246, 0.4)"
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "#3b82f6"
+            e.currentTarget.style.transform = "translateY(0)"
+            e.currentTarget.style.boxShadow = "0 4px 12px rgba(59, 130, 246, 0.3)"
+          }}
+        >
+          Go to Mobile Version
+          <ChevronRight size={18} />
+        </a>
+      </div>
+    )
   }
 
   if (isSleeping) {
