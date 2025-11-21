@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, useMemo, useRef } from "react"
 import { initializeApp } from "firebase/app"
 import { getDatabase, ref, onValue } from "firebase/database"
@@ -19,9 +18,11 @@ import {
   Power,
   RefreshCw,
   Monitor,
-  Clock,
   Smartphone,
 } from "lucide-react"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { format } from "date-fns"
 
 const initFirebase = () => {
   let app
@@ -56,6 +57,7 @@ const BlackIceShowcase = () => {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [startMenuOpen, setStartMenuOpen] = useState(false)
   const [isSleeping, setIsSleeping] = useState(false)
+  const [calendarOpen, setCalendarOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -174,6 +176,18 @@ const BlackIceShowcase = () => {
     }
   }
 
+  const handleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`)
+      })
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen()
+      }
+    }
+  }
+
   if (isMobile) {
     return (
       <div
@@ -271,15 +285,84 @@ const BlackIceShowcase = () => {
           alignItems: "center",
           justifyContent: "center",
           flexDirection: "column",
-          background: "#000",
+          background: "radial-gradient(circle at center, #1e293b 0%, #020617 100%)",
+          position: "relative",
+          overflow: "hidden",
         }}
         onClick={() => setIsSleeping(false)}
       >
-        <div className="animate-pulse" style={{ color: "var(--os-accent)", marginBottom: 20 }}>
-          <Power size={64} />
+        {/* Animated Background Elements */}
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "60vw",
+            height: "60vw",
+            background: "radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)",
+            borderRadius: "50%",
+            animation: "pulse 8s infinite ease-in-out",
+            pointerEvents: "none",
+          }}
+        />
+
+        <div className="flex flex-col items-center z-10 animate-in fade-in duration-1000">
+          <div
+            style={{
+              fontSize: "8rem",
+              fontWeight: "200",
+              fontVariantNumeric: "tabular-nums",
+              color: "var(--text-primary)",
+              lineHeight: 1,
+              textShadow: "0 0 40px rgba(59, 130, 246, 0.5)",
+              fontFamily: "Geist Mono, monospace",
+            }}
+          >
+            {format(currentTime, "HH:mm")}
+          </div>
+          <div
+            style={{
+              fontSize: "2rem",
+              color: "var(--text-secondary)",
+              marginTop: "1rem",
+              fontWeight: "300",
+              letterSpacing: "2px",
+            }}
+          >
+            {format(currentTime, "EEEE, MMMM do")}
+          </div>
         </div>
-        <div style={{ color: "var(--text-secondary)" }}>System Suspended</div>
-        <div style={{ color: "var(--text-tertiary)", fontSize: "0.8rem", marginTop: 10 }}>Click to Wake</div>
+
+        <div
+          style={{
+            position: "absolute",
+            bottom: "4rem",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "1rem",
+            zIndex: 20,
+          }}
+        >
+          <div className="flex items-center gap-2 text-blue-400/60 text-sm uppercase tracking-widest">
+            <Power size={14} />
+            <span>System Standby</span>
+          </div>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              handleFullscreen()
+            }}
+            className="group flex items-center gap-2 px-6 py-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-all duration-300 backdrop-blur-md"
+          >
+            <Maximize2 size={16} className="text-blue-400 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium text-slate-300">Enter Fullscreen</span>
+          </button>
+
+          <div className="text-slate-600 text-xs mt-4 animate-pulse">Click anywhere to wake</div>
+        </div>
       </div>
     )
   }
@@ -747,6 +830,44 @@ const BlackIceShowcase = () => {
             transform: none;
           }
         }
+
+        /* Calendar Popover Styles */
+        .calendar-popover-content {
+          background: rgba(19, 19, 26, 0.95) !important;
+          backdrop-filter: blur(20px);
+          border: 1px solid var(--os-border) !important;
+          color: var(--text-primary);
+          box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        
+        .rdp {
+          --rdp-cell-size: 40px;
+          --rdp-accent-color: var(--os-accent);
+          --rdp-background-color: var(--os-surface-elevated);
+          margin: 0;
+        }
+        
+        .rdp-day_selected:not([disabled]), .rdp-day_selected:focus:not([disabled]), .rdp-day_selected:active:not([disabled]), .rdp-day_selected:hover:not([disabled]) {
+          background-color: var(--os-accent);
+          color: white;
+        }
+        
+        .rdp-day:hover:not(.rdp-day_selected) {
+          background-color: var(--os-surface-elevated);
+        }
+        
+        .rdp-button_reset {
+          color: var(--text-primary);
+        }
+        
+        .rdp-nav_button {
+          color: var(--text-secondary);
+        }
+        
+        .rdp-nav_button:hover {
+          color: var(--text-primary);
+          background-color: var(--os-surface-elevated);
+        }
       `}</style>
 
       {/* Mobile Overlay */}
@@ -965,43 +1086,58 @@ const BlackIceShowcase = () => {
         <div
           className={`taskbar-item ${startMenuOpen ? "active" : ""}`}
           onClick={() => setStartMenuOpen(!startMenuOpen)}
+          title="Start"
           style={{ marginRight: 12 }}
         >
           <div
             style={{
               width: 24,
               height: 24,
-              background: "var(--os-accent)",
-              borderRadius: 4,
+              background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+              borderRadius: 6,
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
               gap: 2,
               padding: 4,
             }}
           >
-            <div style={{ background: "white", borderRadius: 1 }} />
-            <div style={{ background: "white", borderRadius: 1 }} />
-            <div style={{ background: "white", borderRadius: 1 }} />
-            <div style={{ background: "white", borderRadius: 1 }} />
+            <div style={{ background: "white", borderRadius: 1, opacity: 0.9 }} />
+            <div style={{ background: "white", borderRadius: 1, opacity: 0.7 }} />
+            <div style={{ background: "white", borderRadius: 1, opacity: 0.7 }} />
+            <div style={{ background: "white", borderRadius: 1, opacity: 0.5 }} />
           </div>
         </div>
 
-        <div
-          className={`taskbar-item ${activeUrl === "https://black-ice-3dbk.onrender.com" ? "active" : ""}`}
-          onClick={() => handleProjectSelect("https://black-ice-3dbk.onrender.com", "Home")}
-        >
-          <Home size={20} color="var(--text-primary)" />
-        </div>
-        <div className="taskbar-item" onClick={handleTaskbarSearch}>
+        <div className="taskbar-item" onClick={handleTaskbarSearch} title="Search">
           <Search size={20} color="var(--text-secondary)" />
         </div>
-        <div className="taskbar-item" onClick={() => setSidebarOpen(true)}>
+
+        <div className="taskbar-item" onClick={handleClose} title="Home">
+          <Home size={20} color="var(--text-secondary)" />
+        </div>
+
+        <div className="taskbar-item" onClick={() => setSidebarOpen(true)} title="Favorites">
           <Star size={20} color="var(--text-secondary)" />
         </div>
 
         <div className="clock-display">
-          <Clock size={14} />
-          {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <button className="flex flex-col items-end justify-center h-full px-3 py-1 rounded-lg hover:bg-white/5 transition-colors cursor-pointer border-none bg-transparent outline-none">
+                <div className="text-sm font-medium text-slate-200 tabular-nums leading-none mb-1">
+                  {format(currentTime, "HH:mm")}
+                </div>
+                <div className="text-[10px] font-medium text-slate-400 uppercase tracking-wider leading-none">
+                  {format(currentTime, "MMM dd")}
+                </div>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 border-none bg-transparent shadow-none" align="end" sideOffset={12}>
+              <div className="calendar-popover-content rounded-xl p-4">
+                <Calendar mode="single" selected={currentTime} className="rounded-md" />
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
     </div>
