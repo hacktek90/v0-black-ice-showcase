@@ -2,24 +2,39 @@
 
 import type React from "react"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { initializeApp } from "firebase/app"
 import { getDatabase, ref, onValue } from "firebase/database"
-import { Search, Plus, Star, Home, ChevronRight, ExternalLink, Menu, X } from "lucide-react"
+import {
+  Search,
+  Plus,
+  Star,
+  Home,
+  ChevronRight,
+  Menu,
+  X,
+  Minimize2,
+  Maximize2,
+  XCircle,
+  Power,
+  RefreshCw,
+  Monitor,
+  Clock,
+} from "lucide-react"
 
-let app
-let db
 const initFirebase = () => {
+  let app
+  let db
+  const firebaseConfig = {
+    apiKey: "AIzaSyAp9kCBsDLnQEmR7wWHXwt3FB2T1zDtiqU",
+    authDomain: "h-90-8a7c5.firebaseapp.com",
+    databaseURL: "https://h-90-8a7c5-default-rtdb.firebaseio.com",
+    projectId: "h-90-8a7c5",
+    storageBucket: "h-90-8a7c5.firebasestorage.app",
+    messagingSenderId: "367196609301",
+    appId: "1:367196609301:web:156e24c1b4532c26af671c",
+  }
   if (!app) {
-    const firebaseConfig = {
-      apiKey: "AIzaSyAp9kCBsDLnQEmR7wWHXwt3FB2T1zDtiqU",
-      authDomain: "h-90-8a7c5.firebaseapp.com",
-      databaseURL: "https://h-90-8a7c5-default-rtdb.firebaseio.com",
-      projectId: "h-90-8a7c5",
-      storageBucket: "h-90-8a7c5.firebasestorage.app",
-      messagingSenderId: "367196609301",
-      appId: "1:367196609301:web:156e24c1b4532c26af671c",
-    }
     app = initializeApp(firebaseConfig)
     db = getDatabase(app)
   }
@@ -34,8 +49,13 @@ const BlackIceShowcase = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [loading, setLoading] = useState(true)
+  const [isMinimized, setIsMinimized] = useState(false)
+  const [isMaximized, setIsMaximized] = useState(false)
+  const [currentTime, setCurrentTime] = useState(new Date())
+  const [startMenuOpen, setStartMenuOpen] = useState(false)
+  const [isSleeping, setIsSleeping] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
-  // Load Favorites
   useEffect(() => {
     if (typeof window === "undefined") return
     const savedFavs = JSON.parse(localStorage.getItem("bi_favorites") || "[]")
@@ -60,7 +80,11 @@ const BlackIceShowcase = () => {
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
-  // Toggle Favorite
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
   const toggleFavorite = (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation()
     let newFavs
@@ -108,33 +132,76 @@ const BlackIceShowcase = () => {
     }
   }
 
+  const handleMinimize = () => setIsMinimized(!isMinimized)
+  const handleMaximize = () => {
+    setIsMaximized(!isMaximized)
+    setSidebarOpen(isMaximized)
+  }
+  const handleClose = () => {
+    setActiveUrl("")
+    setActiveTitle("Desktop")
+    setIsMinimized(false)
+  }
+
+  const handleTaskbarSearch = () => {
+    setSidebarOpen(true)
+    setTimeout(() => searchInputRef.current?.focus(), 100)
+  }
+
   const handleProjectSelect = (url: string, title: string) => {
     setActiveUrl(url)
     setActiveTitle(title)
+    setIsMinimized(false)
     if (typeof window !== "undefined" && window.innerWidth < 768) {
       setSidebarOpen(false)
     }
+  }
+
+  if (isSleeping) {
+    return (
+      <div
+        className="app-container"
+        style={{
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          background: "#000",
+        }}
+        onClick={() => setIsSleeping(false)}
+      >
+        <div className="animate-pulse" style={{ color: "var(--os-accent)", marginBottom: 20 }}>
+          <Power size={64} />
+        </div>
+        <div style={{ color: "var(--text-secondary)" }}>System Suspended</div>
+        <div style={{ color: "var(--text-tertiary)", fontSize: "0.8rem", marginTop: 10 }}>Click to Wake</div>
+      </div>
+    )
   }
 
   return (
     <div className="app-container">
       <style>{`
         :root {
-          --sidebar-bg: #09090b;
-          --main-bg: #000000;
-          --accent: #00f3ff;
-          --text-primary: #ffffff;
-          --text-muted: #a1a1aa;
-          --border: #27272a;
-          --hover-bg: #18181b;
+          --os-bg: #0a0a0f;
+          --os-surface: #13131a;
+          --os-surface-elevated: #1a1a24;
+          --os-border: #252530;
+          --os-accent: #3b82f6;
+          --os-accent-hover: #2563eb;
+          --text-primary: #f1f5f9;
+          --text-secondary: #94a3b8;
+          --text-tertiary: #64748b;
+          --danger: #ef4444;
+          --success: #10b981;
+          --warning: #f59e0b;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-          background: var(--main-bg);
+          background: var(--os-bg);
           color: var(--text-primary);
-          font-family: 'Inter', sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
           overflow: hidden;
         }
 
@@ -143,31 +210,82 @@ const BlackIceShowcase = () => {
           height: 100vh;
           width: 100vw;
           position: relative;
+          background: var(--os-bg);
+        }
+
+        /* --- OS Taskbar/Dock --- */
+        .os-taskbar {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 60px;
+          background: rgba(19, 19, 26, 0.8);
+          backdrop-filter: blur(20px);
+          border-top: 1px solid var(--os-border);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 0 20px;
+          z-index: 1000;
+        }
+
+        .taskbar-item {
+          width: 48px;
+          height: 48px;
+          background: var(--os-surface-elevated);
+          border: 1px solid var(--os-border);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          position: relative;
+        }
+
+        .taskbar-item:hover {
+          background: var(--os-accent);
+          transform: translateY(-4px);
+          box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .taskbar-item.active::after {
+          content: '';
+          position: absolute;
+          bottom: -8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 4px;
+          height: 4px;
+          background: var(--os-accent);
+          border-radius: 50%;
         }
 
         /* --- Sidebar --- */
         .sidebar {
-          width: 320px;
-          background: var(--sidebar-bg);
-          border-right: 1px solid var(--border);
+          width: 280px;
+          background: var(--os-surface);
+          border-right: 1px solid var(--os-border);
           display: flex;
           flex-direction: column;
           transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           z-index: 100;
-          height: 100%;
-          position: relative; /* Changed from absolute on mobile usually */
+          height: calc(100vh - 60px);
+          position: relative;
           flex-shrink: 0;
         }
 
         .sidebar-header {
-          padding: 20px;
-          border-bottom: 1px solid var(--border);
+          padding: 16px;
+          border-bottom: 1px solid var(--os-border);
           display: flex;
           flex-direction: column;
-          gap: 15px;
+          gap: 12px;
+          background: var(--os-surface-elevated);
         }
         
-        /* Header row for mobile close button */
         .sidebar-top-row {
           display: flex;
           justify-content: space-between;
@@ -175,84 +293,125 @@ const BlackIceShowcase = () => {
         }
         
         .sidebar-title {
-          font-weight: 700;
-          font-size: 1rem;
-          color: white;
+          font-weight: 600;
+          font-size: 0.875rem;
+          color: var(--text-primary);
+          letter-spacing: 0.5px;
         }
 
         .close-sidebar-btn {
           background: none;
           border: none;
-          color: #71717a;
+          color: var(--text-tertiary);
           cursor: pointer;
-          display: none; /* Hidden on desktop */
+          display: none;
+          padding: 4px;
+          border-radius: 6px;
+          transition: all 0.2s;
+        }
+
+        .close-sidebar-btn:hover {
+          background: var(--os-border);
+          color: var(--text-primary);
         }
 
         .search-wrapper { position: relative; }
 
         .search-input {
           width: 100%;
-          background: #18181b;
-          border: 1px solid #3f3f46;
-          color: white;
-          padding: 10px 10px 10px 36px;
+          background: var(--os-bg);
+          border: 1px solid var(--os-border);
+          color: var(--text-primary);
+          padding: 8px 8px 8px 32px;
           border-radius: 8px;
-          font-size: 0.85rem;
+          font-size: 0.813rem;
           outline: none;
           transition: all 0.2s;
         }
-        .search-input:focus { border-color: var(--accent); background: #000; }
-        .search-icon { position: absolute; left: 10px; top: 11px; color: #71717a; width: 16px; }
+        .search-input:focus { 
+          border-color: var(--os-accent); 
+          background: var(--os-surface);
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .search-icon { 
+          position: absolute; 
+          left: 10px; 
+          top: 10px; 
+          color: var(--text-tertiary); 
+          width: 14px; 
+        }
 
         .nav-list {
           flex: 1;
           overflow-y: auto;
-          padding: 15px;
+          padding: 12px;
+        }
+
+        .nav-list::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .nav-list::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .nav-list::-webkit-scrollbar-thumb {
+          background: var(--os-border);
+          border-radius: 3px;
         }
 
         .section-label {
-          font-size: 0.7rem;
+          font-size: 0.688rem;
           text-transform: uppercase;
-          letter-spacing: 1px;
-          color: #52525b;
-          margin: 20px 0 10px;
-          font-weight: 700;
+          letter-spacing: 0.8px;
+          color: var(--text-tertiary);
+          margin: 16px 0 8px;
+          font-weight: 600;
+          padding: 0 8px;
         }
 
         .project-card {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 12px;
+          gap: 10px;
+          padding: 10px;
           background: transparent;
           border: 1px solid transparent;
-          border-radius: 12px;
+          border-radius: 10px;
           cursor: pointer;
           transition: all 0.2s;
-          margin-bottom: 8px;
+          margin-bottom: 6px;
           position: relative;
           width: 100%;
           text-align: left;
         }
 
         .project-card:hover {
-          background: var(--hover-bg);
-          border-color: #3f3f46;
+          background: var(--os-surface-elevated);
+          border-color: var(--os-border);
         }
 
         .project-card.active {
-          background: #18181b;
-          border-color: var(--accent);
-          box-shadow: 0 0 15px rgba(0, 243, 255, 0.05);
+          background: var(--os-accent);
+          border-color: var(--os-accent);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+
+        .project-card.active .card-title {
+          color: white;
+        }
+
+        .project-card.active .card-url {
+          color: rgba(255, 255, 255, 0.8);
         }
 
         .card-thumb-wrapper {
-          width: 50px;
-          height: 50px;
+          width: 40px;
+          height: 40px;
           border-radius: 8px;
           overflow: hidden;
-          border: 1px solid #333;
-          background: #000;
+          border: 1px solid var(--os-border);
+          background: var(--os-bg);
           flex-shrink: 0;
         }
 
@@ -261,18 +420,18 @@ const BlackIceShowcase = () => {
         .card-info { flex: 1; overflow: hidden; }
 
         .card-title {
-          font-size: 0.95rem;
+          font-size: 0.875rem;
           font-weight: 500;
-          color: #e4e4e7;
+          color: var(--text-primary);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          margin-bottom: 4px;
+          margin-bottom: 2px;
         }
 
         .card-url {
           font-size: 0.75rem;
-          color: #71717a;
+          color: var(--text-secondary);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -285,10 +444,10 @@ const BlackIceShowcase = () => {
           padding: 4px;
           opacity: 0;
           transition: opacity 0.2s;
-          color: #71717a;
+          color: var(--text-tertiary);
         }
         .project-card:hover .fav-btn, .fav-btn.active { opacity: 1; }
-        .fav-btn.active { color: #eab308; fill: #eab308; }
+        .fav-btn.active { color: var(--warning); fill: var(--warning); }
 
         /* --- Main Content --- */
         .main-view {
@@ -296,66 +455,157 @@ const BlackIceShowcase = () => {
           display: flex;
           flex-direction: column;
           position: relative;
-          background: #000;
+          background: var(--os-bg);
           width: 100%;
+          height: calc(100vh - 60px);
         }
 
-        .top-bar {
-          height: 50px;
-          border-bottom: 1px solid var(--border);
+        .window-chrome {
+          height: 48px;
+          background: var(--os-surface);
+          border-bottom: 1px solid var(--os-border);
           display: flex;
           align-items: center;
-          padding: 0 20px;
-          background: var(--sidebar-bg);
+          padding: 0 16px;
           justify-content: space-between;
         }
 
-        .nav-toggle {
-          background: none;
-          border: none;
-          color: white;
-          cursor: pointer;
-          padding: 5px;
-          margin-right: 15px;
-        }
-
-        .page-title {
-          font-weight: 600;
-          font-size: 0.9rem;
+        .window-controls-left {
           display: flex;
           align-items: center;
+          gap: 12px;
+        }
+
+        .window-btn {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          border: none;
+          background: transparent;
+          color: var(--text-secondary);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        }
+
+        .window-btn:hover {
+          background: var(--os-surface-elevated);
+          color: var(--text-primary);
+        }
+
+        .window-btn.close:hover {
+          background: var(--danger);
+          color: white;
+        }
+
+        .window-title {
+          flex: 1;
+          text-align: center;
+          font-size: 0.813rem;
+          color: var(--text-secondary);
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+        }
+
+        .window-controls-right {
+          display: flex;
           gap: 8px;
         }
-
-        .external-link {
-          color: #71717a;
-          text-decoration: none;
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          font-size: 0.8rem;
-          padding: 6px 12px;
-          border-radius: 4px;
-          background: #18181b;
-        }
-        .external-link:hover { color: white; background: #27272a; }
 
         .iframe-wrapper {
           flex: 1;
           position: relative;
-          background: #000;
+          background: var(--os-bg);
+          border-radius: 0;
+          overflow: hidden;
         }
 
-        .web-frame { width: 100%; height: 100%; border: none; }
+        .web-frame { 
+          width: 100%; 
+          height: 100%; 
+          border: none;
+          background: white;
+        }
 
         /* --- Overlay for Mobile --- */
         .mobile-overlay {
           position: fixed;
           top: 0; left: 0; right: 0; bottom: 0;
           background: rgba(0, 0, 0, 0.6);
-          backdrop-filter: blur(2px);
+          backdrop-filter: blur(4px);
           z-index: 90;
           display: none;
+        }
+
+        /* --- Start Menu --- */
+        .start-menu {
+          position: fixed;
+          bottom: 70px;
+          left: 20px;
+          width: 200px;
+          background: var(--os-surface-elevated);
+          border: 1px solid var(--os-border);
+          border-radius: 12px;
+          padding: 8px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          z-index: 2000;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+          animation: slideUp 0.2s ease-out;
+        }
+        
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .start-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px;
+          border-radius: 8px;
+          color: var(--text-primary);
+          cursor: pointer;
+          transition: background 0.2s;
+          font-size: 0.9rem;
+        }
+
+        .start-item:hover {
+          background: var(--os-surface);
+        }
+
+        .start-item.danger:hover {
+          background: var(--danger);
+          color: white;
+        }
+
+        /* --- Desktop View --- */
+        .desktop-view {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          color: var(--text-tertiary);
+          background: radial-gradient(circle at center, #1a1a24 0%, #0a0a0f 100%);
+        }
+
+        .clock-display {
+          margin-left: auto;
+          padding: 0 20px;
+          color: var(--text-secondary);
+          font-size: 0.9rem;
+          font-variant-numeric: tabular-nums;
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
 
         /* --- Responsive Logic --- */
@@ -380,43 +630,36 @@ const BlackIceShowcase = () => {
           .close-sidebar-btn {
             display: block;
           }
-          
-          .nav-toggle {
-            display: block; /* Show menu hamburger on mobile */
-          }
         }
 
         @media (min-width: 769px) {
           .sidebar.closed {
-            margin-left: -320px; /* Hide sidebar on desktop by negative margin */
+            margin-left: -280px;
           }
           .sidebar {
-            position: relative; /* Static flow on desktop */
+            position: relative;
             transform: none;
-          }
-          .nav-toggle {
-            /* Optional: hide hamburger on desktop if you want permanent sidebar */
-            /* display: none; */ 
           }
         }
       `}</style>
 
-      {/* Mobile Overlay - Click to close */}
+      {/* Mobile Overlay */}
       <div className={`mobile-overlay ${sidebarOpen ? "open" : ""}`} onClick={() => setSidebarOpen(false)} />
 
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? "open" : "closed"}`}>
         <div className="sidebar-header">
           <div className="sidebar-top-row">
-            <div className="sidebar-title">BlackICE OS</div>
+            <div className="sidebar-title">BLACKICE OS</div>
             <button className="close-sidebar-btn" onClick={() => setSidebarOpen(false)}>
-              <X size={24} />
+              <X size={20} />
             </button>
           </div>
 
           <div className="search-wrapper">
             <Search className="search-icon" />
             <input
+              ref={searchInputRef}
               type="text"
               className="search-input"
               placeholder="Search projects..."
@@ -430,8 +673,8 @@ const BlackIceShowcase = () => {
             style={{
               width: "100%",
               marginBottom: 0,
-              background: "#00f3ff10",
-              borderColor: "#00f3ff30",
+              background: "rgba(59, 130, 246, 0.1)",
+              borderColor: "rgba(59, 130, 246, 0.3)",
             }}
             onClick={() =>
               handleProjectSelect("https://black-ice-3dbk.onrender.com/elegant-store.html", "Submit Project")
@@ -443,13 +686,13 @@ const BlackIceShowcase = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "var(--accent)",
+                background: "var(--os-accent)",
               }}
             >
-              <Plus color="black" size={24} />
+              <Plus color="white" size={20} />
             </div>
             <div className="card-info">
-              <div className="card-title" style={{ color: "var(--accent)" }}>
+              <div className="card-title" style={{ color: "var(--os-accent)" }}>
                 Submit Project
               </div>
               <div className="card-url">Join the showcase</div>
@@ -469,10 +712,10 @@ const BlackIceShowcase = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "#222",
+                background: "var(--os-surface-elevated)",
               }}
             >
-              <Home color="white" size={20} />
+              <Home color="var(--text-secondary)" size={18} />
             </div>
             <div className="card-info">
               <div className="card-title">Home</div>
@@ -498,6 +741,7 @@ const BlackIceShowcase = () => {
                         className="card-thumb"
                         loading="lazy"
                         alt=""
+                        onError={(e) => (e.currentTarget.src = "https://via.placeholder.com/40/1a1a24/64748b?text=?")}
                       />
                     </div>
                     <div className="card-info">
@@ -505,7 +749,7 @@ const BlackIceShowcase = () => {
                       <div className="card-url">{getHostname(p.url)}</div>
                     </div>
                     <button className="fav-btn active" onClick={(e) => toggleFavorite(e, p.id)}>
-                      <Star size={16} fill="#eab308" />
+                      <Star size={14} fill="var(--warning)" />
                     </button>
                   </div>
                 ))}
@@ -515,7 +759,7 @@ const BlackIceShowcase = () => {
           <div className="section-label">All Projects ({filteredProjects.length})</div>
 
           {loading ? (
-            <div style={{ padding: "20px", textAlign: "center", color: "#555" }}>Loading...</div>
+            <div style={{ padding: "20px", textAlign: "center", color: "var(--text-tertiary)" }}>Loading...</div>
           ) : (
             filteredProjects.map((p) => (
               <div
@@ -529,7 +773,7 @@ const BlackIceShowcase = () => {
                     className="card-thumb"
                     loading="lazy"
                     alt=""
-                    onError={(e) => (e.currentTarget.src = "https://via.placeholder.com/50/333/666?text=?")}
+                    onError={(e) => (e.currentTarget.src = "https://via.placeholder.com/40/1a1a24/64748b?text=?")}
                   />
                 </div>
                 <div className="card-info">
@@ -540,7 +784,7 @@ const BlackIceShowcase = () => {
                   className={`fav-btn ${favorites.includes(p.id) ? "active" : ""}`}
                   onClick={(e) => toggleFavorite(e, p.id)}
                 >
-                  <Star size={16} fill={favorites.includes(p.id) ? "#eab308" : "none"} />
+                  <Star size={14} fill={favorites.includes(p.id) ? "var(--warning)" : "none"} />
                 </button>
               </div>
             ))
@@ -550,34 +794,110 @@ const BlackIceShowcase = () => {
 
       {/* Main View */}
       <main className="main-view">
-        <header className="top-bar">
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <button className="nav-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-            <div className="page-title">
-              <span>Browser</span>
-              <ChevronRight size={14} color="#555" />
-              <span>{activeTitle}</span>
+        {activeUrl ? (
+          <>
+            <header className="window-chrome">
+              <div className="window-controls-left">
+                <button className="window-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                  {sidebarOpen ? <X size={16} /> : <Menu size={16} />}
+                </button>
+              </div>
+
+              <div className="window-title">
+                <span>{activeTitle}</span>
+                <ChevronRight size={12} />
+                <span style={{ color: "var(--text-tertiary)" }}>{getHostname(activeUrl)}</span>
+              </div>
+
+              <div className="window-controls-right">
+                <button className="window-btn" onClick={handleMinimize}>
+                  <Minimize2 size={14} />
+                </button>
+                <button className="window-btn" onClick={handleMaximize}>
+                  <Maximize2 size={14} />
+                </button>
+                <button className="window-btn close" onClick={handleClose}>
+                  <XCircle size={14} />
+                </button>
+              </div>
+            </header>
+
+            {!isMinimized && (
+              <div className="iframe-wrapper">
+                <iframe src={activeUrl} className="web-frame" title={activeTitle} />
+              </div>
+            )}
+            {isMinimized && (
+              <div className="desktop-view">
+                <Monitor size={64} style={{ opacity: 0.2, marginBottom: 20 }} />
+                <div>Application Minimized</div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="desktop-view">
+            <div style={{ fontSize: "2rem", fontWeight: "bold", marginBottom: "1rem", color: "var(--os-accent)" }}>
+              BLACKICE OS
             </div>
+            <div>Select a project to begin</div>
           </div>
-
-          <a href={activeUrl} target="_blank" rel="noreferrer" className="external-link">
-            <span>Open External</span>
-            <ExternalLink size={14} />
-          </a>
-        </header>
-
-        <div className="iframe-wrapper">
-          <iframe
-            src={activeUrl}
-            className="web-frame"
-            title="Content Browser"
-            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-presentation"
-            allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; clipboard-read; clipboard-write"
-          />
-        </div>
+        )}
       </main>
+
+      {startMenuOpen && (
+        <div className="start-menu">
+          <div className="start-item" onClick={() => window.location.reload()}>
+            <RefreshCw size={16} /> Restart System
+          </div>
+          <div className="start-item danger" onClick={() => setIsSleeping(true)}>
+            <Power size={16} /> Sleep Mode
+          </div>
+        </div>
+      )}
+
+      <div className="os-taskbar">
+        <div
+          className={`taskbar-item ${startMenuOpen ? "active" : ""}`}
+          onClick={() => setStartMenuOpen(!startMenuOpen)}
+          style={{ marginRight: 12 }}
+        >
+          <div
+            style={{
+              width: 24,
+              height: 24,
+              background: "var(--os-accent)",
+              borderRadius: 4,
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 2,
+              padding: 4,
+            }}
+          >
+            <div style={{ background: "white", borderRadius: 1 }} />
+            <div style={{ background: "white", borderRadius: 1 }} />
+            <div style={{ background: "white", borderRadius: 1 }} />
+            <div style={{ background: "white", borderRadius: 1 }} />
+          </div>
+        </div>
+
+        <div
+          className={`taskbar-item ${activeUrl === "https://black-ice-3dbk.onrender.com" ? "active" : ""}`}
+          onClick={() => handleProjectSelect("https://black-ice-3dbk.onrender.com", "Home")}
+        >
+          <Home size={20} color="var(--text-primary)" />
+        </div>
+        <div className="taskbar-item" onClick={handleTaskbarSearch}>
+          <Search size={20} color="var(--text-secondary)" />
+        </div>
+        <div className="taskbar-item" onClick={() => setSidebarOpen(true)}>
+          <Star size={20} color="var(--text-secondary)" />
+        </div>
+
+        <div className="clock-display">
+          <Clock size={14} />
+          {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        </div>
+      </div>
     </div>
   )
 }
