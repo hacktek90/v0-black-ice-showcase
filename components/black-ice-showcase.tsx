@@ -1051,7 +1051,13 @@ const BlackIceShowcase = () => {
 
             {!isMinimized && (
               <div className="iframe-wrapper">
-                <iframe src={activeUrl} className="web-frame" title={activeTitle} />
+                <iframe
+                  src={activeUrl}
+                  className="web-frame"
+                  title={activeTitle}
+                  allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; clipboard-read; clipboard-write; fullscreen"
+                  allowFullScreen
+                />
               </div>
             )}
             {isMinimized && (
