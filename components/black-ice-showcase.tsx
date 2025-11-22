@@ -19,9 +19,16 @@ import {
   RefreshCw,
   Monitor,
   Smartphone,
+  Shield,
+  CheckCircle,
+  Cloud,
+  Sun,
+  CloudRain,
+  Newspaper,
 } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { format } from "date-fns"
 
 const initFirebase = () => {
@@ -58,6 +65,13 @@ const BlackIceShowcase = () => {
   const [startMenuOpen, setStartMenuOpen] = useState(false)
   const [isSleeping, setIsSleeping] = useState(false)
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const [securityScanning, setSecurityScanning] = useState(false)
+  const [securitySecure, setSecuritySecure] = useState(false)
+  const [securityDialogOpen, setSecurityDialogOpen] = useState(false)
+  const [weather, setWeather] = useState<{ temp: number; condition: string } | null>(null)
+  const [news, setNews] = useState<string | null>(null)
+  const [newsList, setNewsList] = useState<Array<{ title: string; link: string }>>([])
+  const [newsExpanded, setNewsExpanded] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -104,6 +118,62 @@ const BlackIceShowcase = () => {
     return () => clearInterval(timer)
   }, [])
 
+  useEffect(() => {
+    if (typeof window === "undefined" || !navigator.geolocation) return
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords
+          const res = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`,
+          )
+          const data = await res.json()
+          if (data.current_weather) {
+            setWeather({
+              temp: Math.round(data.current_weather.temperature),
+              condition: getWeatherCondition(data.current_weather.weathercode),
+            })
+          }
+        } catch (e) {
+          console.error("Failed to fetch weather", e)
+        }
+      },
+      (err) => console.error("Geolocation error", err),
+    )
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const fetchNews = async () => {
+      try {
+        const response = await fetch(
+          "https://api.rss2json.com/v1/api.json?rss_url=http://feeds.bbci.co.uk/news/world/rss.xml",
+        )
+        const data = await response.json()
+        if (data.items && data.items.length > 0) {
+          setNews(data.items[0].title)
+          setNewsList(
+            data.items.slice(0, 10).map((item: any) => ({
+              title: item.title,
+              link: item.link,
+            })),
+          )
+        }
+      } catch (error) {
+        console.error("Failed to fetch news", error)
+      }
+    }
+
+    fetchNews()
+    const newsInterval = setInterval(fetchNews, 10000)
+
+    return () => {
+      clearInterval(newsInterval)
+    }
+  }, [])
+
   const toggleFavorite = (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation()
     let newFavs
@@ -113,7 +183,7 @@ const BlackIceShowcase = () => {
       newFavs = [...favorites, projectId]
     }
     setFavorites(newFavs)
-    localStorage.setItem("bi_favorites", JSON.stringify(newFavs))
+    localStorage.setItem("bi_favorites", JSON.JSON.stringify(newFavs))
   }
 
   useEffect(() => {
@@ -186,6 +256,24 @@ const BlackIceShowcase = () => {
         document.exitFullscreen()
       }
     }
+  }
+
+  const handleSecurityClick = () => {
+    setSecurityDialogOpen(true)
+    setSecurityScanning(true)
+    setSecuritySecure(false)
+
+    setTimeout(() => {
+      setSecurityScanning(false)
+      setSecuritySecure(true)
+    }, 2000)
+  }
+
+  const getWeatherCondition = (code: number) => {
+    if (code <= 3) return "Clear"
+    if (code <= 48) return "Cloudy"
+    if (code <= 82) return "Rain"
+    return "Storm"
   }
 
   if (isMobile) {
@@ -280,12 +368,14 @@ const BlackIceShowcase = () => {
   if (isSleeping) {
     return (
       <div
-        className="app-container"
         style={{
+          width: "100vw",
+          height: "100vh",
+          background: "radial-gradient(circle at center, #1e293b 0%, #020617 100%)",
+          display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          flexDirection: "column",
-          background: "radial-gradient(circle at center, #1e293b 0%, #020617 100%)",
           position: "relative",
           overflow: "hidden",
         }}
@@ -868,6 +958,43 @@ const BlackIceShowcase = () => {
           color: var(--text-primary);
           background-color: var(--os-surface-elevated);
         }
+
+        /* Security Dialog Styles */
+        .security-dialog-content {
+          background: rgba(19, 19, 26, 0.95) !important;
+          backdrop-filter: blur(20px);
+          border: 1px solid var(--os-border) !important;
+          color: var(--text-primary);
+          box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        
+        .scan-line {
+          height: 2px;
+          background: var(--os-accent);
+          box-shadow: 0 0 10px var(--os-accent);
+          animation: scan 2s infinite linear;
+        }
+        
+        @keyframes scan {
+          0% { transform: translateY(0); opacity: 0; }
+          50% { opacity: 1; }
+          100% { transform: translateY(100px); opacity: 0; }
+        }
+
+        /* Custom Scrollbar for News Modal */
+        .news-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .news-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .news-scroll::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 3px;
+        }
+        .news-scroll::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
       `}</style>
 
       {/* Mobile Overlay */}
@@ -1110,7 +1237,99 @@ const BlackIceShowcase = () => {
           <Star size={20} color="var(--text-secondary)" />
         </div>
 
-        <div className="clock-display">
+        {weather && (
+          <div className="flex items-center gap-2 px-3 py-1 mx-2 rounded-lg bg-white/5 border border-white/5">
+            {weather.condition === "Clear" && <Sun size={16} className="text-yellow-400" />}
+            {weather.condition === "Cloudy" && <Cloud size={16} className="text-slate-400" />}
+            {weather.condition === "Rain" && <CloudRain size={16} className="text-blue-400" />}
+            {weather.condition === "Storm" && <CloudRain size={16} className="text-purple-400" />}
+            <span className="text-sm font-medium text-slate-200">{weather.temp}°C</span>
+          </div>
+        )}
+
+        {news && (
+          <>
+            {/* Make news widget clickable to expand */}
+            <div
+              className="flex items-center gap-2 px-3 py-1 mx-2 rounded-lg bg-white/5 border border-white/5 max-w-[200px] overflow-hidden cursor-pointer hover:bg-white/10 transition-colors"
+              onClick={() => setNewsExpanded(true)}
+            >
+              <Newspaper size={16} className="text-orange-400 shrink-0" />
+              <div className="text-xs font-medium text-slate-200 truncate overflow-hidden whitespace-nowrap">
+                <span className="mr-2 text-slate-400">BBC News:</span>
+                {news}
+              </div>
+            </div>
+
+            {/* Add expanded news modal */}
+            {newsExpanded && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                <div
+                  className="w-full max-w-2xl bg-[#0a0a0f] border border-[#252530] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] m-4 animate-in zoom-in-95 duration-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Modal Header */}
+                  <div className="flex items-center justify-between p-4 border-b border-[#252530] bg-[#13131a]">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-orange-500/10">
+                        <Newspaper size={20} className="text-orange-500" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-semibold text-white">BBC World News</h2>
+                        <p className="text-xs text-slate-400">Latest global updates</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setNewsExpanded(false)}
+                      className="p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+
+                  {/* Modal Content */}
+                  <div className="p-4 overflow-y-auto news-scroll space-y-3">
+                    {newsList.map((item, idx) => (
+                      <a
+                        key={idx}
+                        href={item.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-start gap-4 p-4 rounded-lg bg-[#1a1a24] border border-[#252530] hover:border-blue-500/50 hover:bg-[#252530] transition-all group"
+                      >
+                        <span className="text-2xl font-bold text-[#252530] group-hover:text-blue-500/20 transition-colors">
+                          {idx + 1}
+                        </span>
+                        <div>
+                          <h3 className="text-sm font-medium text-slate-200 group-hover:text-white leading-relaxed transition-colors">
+                            {item.title}
+                          </h3>
+                        </div>
+                        <ChevronRight
+                          size={16}
+                          className="text-slate-600 group-hover:text-blue-400 ml-auto shrink-0 transition-colors"
+                        />
+                      </a>
+                    ))}
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div className="p-3 border-t border-[#252530] bg-[#13131a] text-center">
+                    <p className="text-xs text-slate-500">
+                      Powered by BBC News RSS • Updated {new Date().toLocaleTimeString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        <div className="taskbar-item" onClick={handleSecurityClick} title="Security Status">
+          <Shield size={18} className="text-emerald-400" />
+        </div>
+
+        <div className="taskbar-clock" onClick={() => setCalendarOpen(!calendarOpen)}>
           <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
             <PopoverTrigger asChild>
               <button className="flex flex-col items-end justify-center h-full px-3 py-1 rounded-lg hover:bg-white/5 transition-colors cursor-pointer border-none bg-transparent outline-none">
@@ -1130,6 +1349,48 @@ const BlackIceShowcase = () => {
           </Popover>
         </div>
       </div>
+
+      {/* Security Dialog */}
+      <Dialog open={securityDialogOpen} onOpenChange={setSecurityDialogOpen}>
+        <DialogContent className="security-dialog-content border-none sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-slate-100">
+              <Shield className="text-emerald-400" size={20} />
+              System Security
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-6 flex flex-col items-center justify-center min-h-[200px] relative overflow-hidden rounded-lg bg-black/20">
+            {securityScanning ? (
+              <>
+                <div className="absolute inset-0 bg-emerald-500/5 animate-pulse" />
+                <div className="w-full absolute top-0 scan-line" />
+                <Shield size={64} className="text-emerald-500/50 animate-bounce mb-4" />
+                <div className="text-emerald-400 font-mono text-sm animate-pulse">SCANNING SYSTEM FILES...</div>
+                <div className="text-slate-500 text-xs mt-2 font-mono">Checking integrity...</div>
+              </>
+            ) : securitySecure ? (
+              <>
+                <div className="absolute inset-0 bg-emerald-500/10" />
+                <div className="relative z-10 bg-emerald-500/20 p-4 rounded-full mb-4">
+                  <CheckCircle size={48} className="text-emerald-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-emerald-400 mb-1">System Secure</h3>
+                <p className="text-slate-400 text-sm">No threats detected</p>
+                <div className="mt-6 grid grid-cols-2 gap-4 w-full px-8">
+                  <div className="bg-white/5 p-3 rounded border border-white/5 text-center">
+                    <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Firewall</div>
+                    <div className="text-emerald-400 text-sm font-medium">Active</div>
+                  </div>
+                  <div className="bg-white/5 p-3 rounded border border-white/5 text-center">
+                    <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Protection</div>
+                    <div className="text-emerald-400 text-sm font-medium">Real-time</div>
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
