@@ -1033,7 +1033,12 @@ const BlackIceShowcase = () => {
               <div className="window-title">
                 <span>{activeTitle}</span>
                 <ChevronRight size={12} />
-                <span style={{ color: "var(--text-tertiary)" }}>{getHostname(activeUrl)}</span>
+                <div className="flex items-center gap-2 text-slate-500">
+                  <div className="w-4 h-4 rounded border border-slate-700 bg-slate-800 flex items-center justify-center">
+                    <div className="w-2 h-2 bg-blue-500 rounded-sm" />
+                  </div>
+                  <span>{getHostname(activeUrl)}</span>
+                </div>
               </div>
 
               <div className="window-controls-right">
@@ -1089,36 +1094,15 @@ const BlackIceShowcase = () => {
       )}
 
       <div className="os-taskbar">
-        <div
-          className={`taskbar-item ${startMenuOpen ? "active" : ""}`}
-          onClick={() => setStartMenuOpen(!startMenuOpen)}
-          title="Start"
-          style={{ marginRight: 12 }}
-        >
-          <div
-            style={{
-              width: 24,
-              height: 24,
-              background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-              borderRadius: 6,
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 2,
-              padding: 4,
-            }}
-          >
-            <div style={{ background: "white", borderRadius: 1, opacity: 0.9 }} />
-            <div style={{ background: "white", borderRadius: 1, opacity: 0.7 }} />
-            <div style={{ background: "white", borderRadius: 1, opacity: 0.7 }} />
-            <div style={{ background: "white", borderRadius: 1, opacity: 0.5 }} />
-          </div>
-        </div>
-
         <div className="taskbar-item" onClick={handleTaskbarSearch} title="Search">
           <Search size={20} color="var(--text-secondary)" />
         </div>
 
-        <div className="taskbar-item" onClick={handleClose} title="Home">
+        <div
+          className="taskbar-item"
+          onClick={() => handleProjectSelect("https://black-ice-3dbk.onrender.com", "BlackICE Portal")}
+          title="Home"
+        >
           <Home size={20} color="var(--text-secondary)" />
         </div>
 
