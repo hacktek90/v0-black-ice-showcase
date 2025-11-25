@@ -25,6 +25,21 @@ import {
   Sun,
   CloudRain,
   Newspaper,
+  Minus,
+  Square,
+  Moon,
+  BarChart3,
+  Eye,
+  Clock,
+  Zap,
+  Bell,
+  Settings,
+  Cpu,
+  HardDrive,
+  Wifi,
+  Battery,
+  TrendingUp,
+  Activity,
 } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -72,7 +87,42 @@ const BlackIceShowcase = () => {
   const [news, setNews] = useState<string | null>(null)
   const [newsList, setNewsList] = useState<Array<{ title: string; link: string }>>([])
   const [newsExpanded, setNewsExpanded] = useState(false)
+  const [currentNewsIndex, setCurrentNewsIndex] = useState(0)
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  const [isDarkMode, setIsDarkMode] = useState(true)
+  const [dashboardOpen, setDashboardOpen] = useState(false)
+  const [visitedProjects, setVisitedProjects] = useState<Set<string>>(new Set())
+  const [sessionStartTime] = useState(new Date())
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [batteryLevel, setBatteryLevel] = useState(85)
+  const [notifications, setNotifications] = useState([
+    { id: 1, title: "Welcome to BlackICE OS", message: "Your system is ready", time: "Just now", read: false },
+    { id: 2, title: "Security Scan Complete", message: "No threats found", time: "2m ago", read: false },
+    { id: 3, title: "Weather Update", message: "Clear skies today", time: "5m ago", read: true },
+  ])
+
+  useEffect(() => {
+    if (activeUrl && activeUrl !== "https://black-ice-3dbk.onrender.com") {
+      setVisitedProjects((prev) => new Set([...prev, activeUrl]))
+    }
+  }, [activeUrl])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBatteryLevel((prev) => Math.max(prev - 1, 10))
+    }, 60000) // Decrease by 1% every minute
+    return () => clearInterval(interval)
+  }, [])
+
+  const getSessionDuration = () => {
+    const now = new Date()
+    const diff = now.getTime() - sessionStartTime.getTime()
+    const minutes = Math.floor(diff / 60000)
+    const hours = Math.floor(minutes / 60)
+    if (hours > 0) return `${hours}h ${minutes % 60}m`
+    return `${minutes}m`
+  }
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -174,6 +224,14 @@ const BlackIceShowcase = () => {
     }
   }, [])
 
+  useEffect(() => {
+    if (newsList.length === 0) return
+    const rotateInterval = setInterval(() => {
+      setCurrentNewsIndex((prev) => (prev + 1) % newsList.length)
+    }, 10000)
+    return () => clearInterval(rotateInterval)
+  }, [newsList])
+
   const toggleFavorite = (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation()
     let newFavs
@@ -183,7 +241,7 @@ const BlackIceShowcase = () => {
       newFavs = [...favorites, projectId]
     }
     setFavorites(newFavs)
-    localStorage.setItem("bi_favorites", JSON.JSON.stringify(newFavs))
+    localStorage.setItem("bi_favorites", JSON.stringify(newFavs))
   }
 
   useEffect(() => {
@@ -275,6 +333,28 @@ const BlackIceShowcase = () => {
     if (code <= 82) return "Rain"
     return "Storm"
   }
+
+  const themeColors = isDarkMode
+    ? {
+        bg: "#0a0a0f",
+        surface: "#13131a",
+        surfaceElevated: "#1a1a24",
+        border: "#252530",
+        accent: "#3b82f6",
+        textPrimary: "#f1f5f9",
+        textSecondary: "#94a3b8",
+        textTertiary: "#64748b",
+      }
+    : {
+        bg: "#f8fafc",
+        surface: "#ffffff",
+        surfaceElevated: "#f1f5f9",
+        border: "#e2e8f0",
+        accent: "#3b82f6",
+        textPrimary: "#0f172a",
+        textSecondary: "#475569",
+        textTertiary: "#94a3b8",
+      }
 
   if (isMobile) {
     return (
@@ -458,18 +538,18 @@ const BlackIceShowcase = () => {
   }
 
   return (
-    <div className="app-container">
+    <div className="app-container" data-theme={isDarkMode ? "dark" : "light"}>
       <style>{`
         :root {
-          --os-bg: #0a0a0f;
-          --os-surface: #13131a;
-          --os-surface-elevated: #1a1a24;
-          --os-border: #252530;
-          --os-accent: #3b82f6;
+          --os-bg: ${themeColors.bg};
+          --os-surface: ${themeColors.surface};
+          --os-surface-elevated: ${themeColors.surfaceElevated};
+          --os-border: ${themeColors.border};
+          --os-accent: ${themeColors.accent};
           --os-accent-hover: #2563eb;
-          --text-primary: #f1f5f9;
-          --text-secondary: #94a3b8;
-          --text-tertiary: #64748b;
+          --text-primary: ${themeColors.textPrimary};
+          --text-secondary: ${themeColors.textSecondary};
+          --text-tertiary: ${themeColors.textTertiary};
           --danger: #ef4444;
           --success: #10b981;
           --warning: #f59e0b;
@@ -499,7 +579,7 @@ const BlackIceShowcase = () => {
           left: 0;
           right: 0;
           height: 60px;
-          background: rgba(19, 19, 26, 0.8);
+          background: ${isDarkMode ? "rgba(19, 19, 26, 0.8)" : "rgba(255, 255, 255, 0.8)"};
           backdrop-filter: blur(20px);
           border-top: 1px solid var(--os-border);
           display: flex;
@@ -840,8 +920,14 @@ const BlackIceShowcase = () => {
         }
         
         @keyframes slideUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         .start-item {
@@ -873,7 +959,7 @@ const BlackIceShowcase = () => {
           justify-content: center;
           flex-direction: column;
           color: var(--text-tertiary);
-          background: radial-gradient(circle at center, #1a1a24 0%, #0a0a0f 100%);
+          background: ${isDarkMode ? "radial-gradient(circle at center, #1a1a24 0%, #0a0a0f 100%)" : "radial-gradient(circle at center, #f1f5f9 0%, #e2e8f0 100%)"};
         }
 
         .clock-display {
@@ -923,7 +1009,7 @@ const BlackIceShowcase = () => {
 
         /* Calendar Popover Styles */
         .calendar-popover-content {
-          background: rgba(19, 19, 26, 0.95) !important;
+          background: ${isDarkMode ? "rgba(19, 19, 26, 0.95)" : "rgba(255, 255, 255, 0.95)"} !important;
           backdrop-filter: blur(20px);
           border: 1px solid var(--os-border) !important;
           color: var(--text-primary);
@@ -961,7 +1047,7 @@ const BlackIceShowcase = () => {
 
         /* Security Dialog Styles */
         .security-dialog-content {
-          background: rgba(19, 19, 26, 0.95) !important;
+          background: ${isDarkMode ? "rgba(19, 19, 26, 0.95)" : "rgba(255, 255, 255, 0.95)"} !important;
           backdrop-filter: blur(20px);
           border: 1px solid var(--os-border) !important;
           color: var(--text-primary);
@@ -983,17 +1069,63 @@ const BlackIceShowcase = () => {
 
         /* Custom Scrollbar for News Modal */
         .news-scroll::-webkit-scrollbar {
-          width: 6px;
+          width: 4px;
         }
         .news-scroll::-webkit-scrollbar-track {
           background: transparent;
         }
         .news-scroll::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 3px;
+          background: rgba(255, 255, 255, 0.08);
+          border-radius: 2px;
         }
         .news-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.2);
+          background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Dashboard Panel Styles */
+        .dashboard-panel {
+          position: fixed;
+          bottom: 70px;
+          right: 20px;
+          width: 380px;
+          max-height: 520px;
+          background: ${isDarkMode ? "linear-gradient(180deg, #13131a 0%, #0a0a0f 100%)" : "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)"};
+          border: 1px solid var(--os-border);
+          border-radius: 16px;
+          z-index: 2000;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+          animation: slideUp 0.25s ease-out;
+          overflow: hidden;
+        }
+
+        .stat-card {
+          background: ${isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)"};
+          border: 1px solid ${isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"};
+          border-radius: 12px;
+          padding: 16px;
+          transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+          background: ${isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"};
+          border-color: var(--os-accent);
+        }
+
+        /* Notification Panel Styles */
+        .notification-panel {
+          position: fixed;
+          bottom: 70px;
+          right: 80px;
+          width: 320px;
+          max-height: 400px;
+          background: ${isDarkMode ? "rgba(19, 19, 26, 0.95)" : "rgba(255, 255, 255, 0.95)"};
+          backdrop-filter: blur(20px);
+          border: 1px solid var(--os-border);
+          border-radius: 16px;
+          z-index: 2000;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+          animation: slideUp 0.25s ease-out;
+          overflow: hidden;
         }
       `}</style>
 
@@ -1209,8 +1341,27 @@ const BlackIceShowcase = () => {
         )}
       </main>
 
+      {/* Start Menu */}
       {startMenuOpen && (
         <div className="start-menu">
+          <div
+            className="start-item"
+            onClick={() => {
+              setDashboardOpen(true)
+              setStartMenuOpen(false)
+            }}
+          >
+            <BarChart3 size={16} /> Dashboard
+          </div>
+          <div
+            className="start-item"
+            onClick={() => {
+              setIsDarkMode(!isDarkMode)
+              setStartMenuOpen(false)
+            }}
+          >
+            {isDarkMode ? <Sun size={16} /> : <Moon size={16} />} {isDarkMode ? "Light Mode" : "Dark Mode"}
+          </div>
           <div className="start-item" onClick={() => window.location.reload()}>
             <RefreshCw size={16} /> Restart System
           </div>
@@ -1220,6 +1371,243 @@ const BlackIceShowcase = () => {
         </div>
       )}
 
+      {dashboardOpen && (
+        <div className="dashboard-panel">
+          {/* Header */}
+          <div
+            className="flex items-center justify-between px-5 py-4"
+            style={{ borderBottom: `1px solid ${isDarkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}` }}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)" }}
+              >
+                <BarChart3 size={20} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>
+                  Dashboard
+                </h2>
+                <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                  System Overview
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setDashboardOpen(false)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+              style={{ color: "var(--text-tertiary)" }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="p-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              {/* Projects Visited */}
+              <div className="stat-card">
+                <div className="flex items-center gap-2 mb-2">
+                  <Eye size={14} className="text-blue-400" />
+                  <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
+                    Visited
+                  </span>
+                </div>
+                <div className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+                  {visitedProjects.size}
+                </div>
+                <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                  projects this session
+                </div>
+              </div>
+
+              {/* Not Visited */}
+              <div className="stat-card">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp size={14} className="text-emerald-400" />
+                  <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
+                    Not Visited
+                  </span>
+                </div>
+                <div className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+                  {Math.max(0, projects.length - visitedProjects.size)}
+                </div>
+                <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                  remaining projects
+                </div>
+              </div>
+
+              {/* Favorites */}
+              <div className="stat-card">
+                <div className="flex items-center gap-2 mb-2">
+                  <Star size={14} className="text-yellow-400" />
+                  <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
+                    Favorites
+                  </span>
+                </div>
+                <div className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+                  {favorites.length}
+                </div>
+                <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                  saved projects
+                </div>
+              </div>
+
+              {/* Session Time */}
+              <div className="stat-card">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock size={14} className="text-purple-400" />
+                  <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
+                    Session
+                  </span>
+                </div>
+                <div className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+                  {getSessionDuration()}
+                </div>
+                <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                  active time
+                </div>
+              </div>
+            </div>
+
+            {/* System Info */}
+            <div className="stat-card">
+              <div className="flex items-center gap-2 mb-3">
+                <Activity size={14} className="text-cyan-400" />
+                <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
+                  System Status
+                </span>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Cpu size={12} style={{ color: "var(--text-tertiary)" }} />
+                    <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                      CPU Usage
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-24 h-1.5 rounded-full overflow-hidden"
+                      style={{ background: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)" }}
+                    >
+                      <div className="h-full bg-cyan-400 rounded-full" style={{ width: "23%" }} />
+                    </div>
+                    <span className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
+                      23%
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <HardDrive size={12} style={{ color: "var(--text-tertiary)" }} />
+                    <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                      Memory
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-24 h-1.5 rounded-full overflow-hidden"
+                      style={{ background: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)" }}
+                    >
+                      <div className="h-full bg-emerald-400 rounded-full" style={{ width: "45%" }} />
+                    </div>
+                    <span className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
+                      45%
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Wifi size={12} style={{ color: "var(--text-tertiary)" }} />
+                    <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                      Network
+                    </span>
+                  </div>
+                  <span className="text-xs font-medium text-emerald-400">Connected</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Total Projects */}
+            <div
+              className="flex items-center justify-between p-3 rounded-xl"
+              style={{
+                background: "linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)",
+                border: "1px solid rgba(59, 130, 246, 0.2)",
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <Zap size={18} className="text-blue-400" />
+                <div>
+                  <div className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                    Total Projects
+                  </div>
+                  <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                    in BlackICE showcase
+                  </div>
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-blue-400">{projects.length}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {notificationsOpen && (
+        <div className="notification-panel">
+          <div
+            className="flex items-center justify-between px-4 py-3"
+            style={{ borderBottom: `1px solid ${isDarkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}` }}
+          >
+            <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              Notifications
+            </h3>
+            <button
+              onClick={() => setNotificationsOpen(false)}
+              className="w-6 h-6 rounded flex items-center justify-center"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <div className="p-2 space-y-1 max-h-[300px] overflow-y-auto">
+            {notifications.map((notif) => (
+              <div
+                key={notif.id}
+                className="p-3 rounded-lg transition-colors cursor-pointer"
+                style={{
+                  background: notif.read
+                    ? "transparent"
+                    : isDarkMode
+                      ? "rgba(59, 130, 246, 0.1)"
+                      : "rgba(59, 130, 246, 0.05)",
+                  borderLeft: notif.read ? "none" : "2px solid var(--os-accent)",
+                }}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                    {notif.title}
+                  </div>
+                  <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                    {notif.time}
+                  </span>
+                </div>
+                <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
+                  {notif.message}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Taskbar */}
       <div className="os-taskbar">
         <div className="taskbar-item" onClick={handleTaskbarSearch} title="Search">
           <Search size={20} color="var(--text-secondary)" />
@@ -1237,87 +1625,223 @@ const BlackIceShowcase = () => {
           <Star size={20} color="var(--text-secondary)" />
         </div>
 
+        <div className="taskbar-item" onClick={() => setDashboardOpen(!dashboardOpen)} title="Dashboard">
+          <BarChart3 size={20} color="var(--text-secondary)" />
+        </div>
+
+        <div
+          className="taskbar-item"
+          onClick={() => setIsDarkMode(!isDarkMode)}
+          title={isDarkMode ? "Light Mode" : "Dark Mode"}
+        >
+          {isDarkMode ? (
+            <Sun size={20} color="var(--text-secondary)" />
+          ) : (
+            <Moon size={20} color="var(--text-secondary)" />
+          )}
+        </div>
+
+        <div className="taskbar-item" onClick={() => setStartMenuOpen(!startMenuOpen)} title="Settings">
+          <Settings size={20} color="var(--text-secondary)" />
+        </div>
+
         {weather && (
-          <div className="flex items-center gap-2 px-3 py-1 mx-2 rounded-lg bg-white/5 border border-white/5">
+          <div
+            className="flex items-center gap-2 px-3 py-1 mx-2 rounded-lg"
+            style={{
+              background: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+              border: `1px solid ${isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`,
+            }}
+          >
             {weather.condition === "Clear" && <Sun size={16} className="text-yellow-400" />}
             {weather.condition === "Cloudy" && <Cloud size={16} className="text-slate-400" />}
             {weather.condition === "Rain" && <CloudRain size={16} className="text-blue-400" />}
             {weather.condition === "Storm" && <CloudRain size={16} className="text-purple-400" />}
-            <span className="text-sm font-medium text-slate-200">{weather.temp}°C</span>
+            <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+              {weather.temp}°C
+            </span>
           </div>
         )}
 
         {news && (
           <>
-            {/* Make news widget clickable to expand */}
             <div
-              className="flex items-center gap-2 px-3 py-1 mx-2 rounded-lg bg-white/5 border border-white/5 max-w-[200px] overflow-hidden cursor-pointer hover:bg-white/10 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 mx-2 rounded-lg max-w-[220px] overflow-hidden cursor-pointer transition-all duration-200"
+              style={{
+                background: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+                border: `1px solid ${isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
+              }}
               onClick={() => setNewsExpanded(true)}
             >
-              <Newspaper size={16} className="text-orange-400 shrink-0" />
-              <div className="text-xs font-medium text-slate-200 truncate overflow-hidden whitespace-nowrap">
-                <span className="mr-2 text-slate-400">BBC News:</span>
-                {news}
+              <Newspaper size={14} className="text-cyan-400 shrink-0" />
+              <div
+                className="text-xs font-medium truncate overflow-hidden whitespace-nowrap"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {newsList[currentNewsIndex]?.title || news}
               </div>
             </div>
 
-            {/* Add expanded news modal */}
             {newsExpanded && (
-              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+              <div
+                className="fixed inset-0 z-[100] flex items-end justify-end p-4 pb-16"
+                onClick={() => setNewsExpanded(false)}
+              >
+                {/* OS-style window container */}
                 <div
-                  className="w-full max-w-2xl bg-[#0a0a0f] border border-[#252530] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] m-4 animate-in zoom-in-95 duration-200"
+                  className="w-[420px] max-h-[600px] flex flex-col rounded-xl overflow-hidden shadow-2xl shadow-black/50"
+                  style={{
+                    background: isDarkMode
+                      ? "linear-gradient(180deg, #0d0d12 0%, #0a0a0f 100%)"
+                      : "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
+                    border: `1px solid ${isDarkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)"}`,
+                    animation: "slideUp 0.25s ease-out",
+                  }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {/* Modal Header */}
-                  <div className="flex items-center justify-between p-4 border-b border-[#252530] bg-[#13131a]">
+                  {/* Window Title Bar */}
+                  <div
+                    className="flex items-center justify-between px-4 py-3"
+                    style={{
+                      background: isDarkMode
+                        ? "linear-gradient(180deg, #18181f 0%, #13131a 100%)"
+                        : "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
+                      borderBottom: `1px solid ${isDarkMode ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)"}`,
+                    }}
+                  >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-orange-500/10">
-                        <Newspaper size={20} className="text-orange-500" />
+                      {/* App Icon */}
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center"
+                        style={{ background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)" }}
+                      >
+                        <Newspaper size={16} className="text-white" />
                       </div>
                       <div>
-                        <h2 className="text-lg font-semibold text-white">BBC World News</h2>
-                        <p className="text-xs text-slate-400">Latest global updates</p>
+                        <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                          News
+                        </h2>
+                        <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                          BBC World
+                        </p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setNewsExpanded(false)}
-                      className="p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-all"
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-
-                  {/* Modal Content */}
-                  <div className="p-4 overflow-y-auto news-scroll space-y-3">
-                    {newsList.map((item, idx) => (
-                      <a
-                        key={idx}
-                        href={item.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-start gap-4 p-4 rounded-lg bg-[#1a1a24] border border-[#252530] hover:border-blue-500/50 hover:bg-[#252530] transition-all group"
+                    {/* Window Controls */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
+                        style={{ color: "var(--text-tertiary)" }}
                       >
-                        <span className="text-2xl font-bold text-[#252530] group-hover:text-blue-500/20 transition-colors">
-                          {idx + 1}
-                        </span>
-                        <div>
-                          <h3 className="text-sm font-medium text-slate-200 group-hover:text-white leading-relaxed transition-colors">
-                            {item.title}
-                          </h3>
-                        </div>
-                        <ChevronRight
-                          size={16}
-                          className="text-slate-600 group-hover:text-blue-400 ml-auto shrink-0 transition-colors"
-                        />
-                      </a>
-                    ))}
+                        <Minus size={14} />
+                      </button>
+                      <button
+                        className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        <Square size={12} />
+                      </button>
+                      <button
+                        onClick={() => setNewsExpanded(false)}
+                        className="w-7 h-7 rounded-md flex items-center justify-center transition-colors hover:bg-red-500/20 hover:text-red-400"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Modal Footer */}
-                  <div className="p-3 border-t border-[#252530] bg-[#13131a] text-center">
-                    <p className="text-xs text-slate-500">
-                      Powered by BBC News RSS • Updated {new Date().toLocaleTimeString()}
-                    </p>
+                  {/* Featured Story */}
+                  {newsList[0] && (
+                    <a
+                      href={newsList[0].link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative block mx-3 mt-3 rounded-lg overflow-hidden group"
+                      style={{
+                        background: isDarkMode
+                          ? "linear-gradient(135deg, #1a1a24 0%, #13131a 100%)"
+                          : "linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)",
+                      }}
+                    >
+                      <div className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded bg-cyan-500/20 text-cyan-400">
+                            Top Story
+                          </span>
+                          <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                            {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </span>
+                        </div>
+                        <h3
+                          className="text-sm font-medium leading-relaxed group-hover:text-cyan-400 transition-colors"
+                          style={{ color: "var(--text-primary)" }}
+                        >
+                          {newsList[0].title}
+                        </h3>
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+                    </a>
+                  )}
+
+                  {/* News List */}
+                  <div className="flex-1 overflow-y-auto px-3 py-2 news-scroll">
+                    <div className="space-y-1">
+                      {newsList.slice(1).map((item, idx) => (
+                        <a
+                          key={idx}
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-3 rounded-lg transition-colors group"
+                          style={{ background: "transparent" }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background = isDarkMode
+                              ? "rgba(255,255,255,0.05)"
+                              : "rgba(0,0,0,0.05)")
+                          }
+                          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                        >
+                          <div
+                            className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold shrink-0"
+                            style={{
+                              background: isDarkMode ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.03)",
+                              color: "var(--text-tertiary)",
+                            }}
+                          >
+                            {idx + 2}
+                          </div>
+                          <p
+                            className="text-xs leading-relaxed flex-1 transition-colors"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
+                            {item.title}
+                          </p>
+                          <ChevronRight
+                            size={14}
+                            className="shrink-0 opacity-0 group-hover:opacity-100 transition-all text-cyan-400"
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div
+                    className="px-4 py-2 flex items-center justify-between"
+                    style={{
+                      background: isDarkMode ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.05)",
+                      borderTop: `1px solid ${isDarkMode ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.04)"}`,
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                        Live updates
+                      </span>
+                    </div>
+                    <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                      {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1326,17 +1850,51 @@ const BlackIceShowcase = () => {
         )}
 
         <div className="taskbar-item" onClick={handleSecurityClick} title="Security Status">
-          <Shield size={18} className="text-emerald-400" />
+          <Shield className="text-emerald-400" size={18} />
+        </div>
+
+        <div
+          className="taskbar-item relative"
+          onClick={() => setNotificationsOpen(!notificationsOpen)}
+          title="Notifications"
+        >
+          <Bell size={18} color="var(--text-secondary)" />
+          {notifications.filter((n) => !n.read).length > 0 && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">
+              {notifications.filter((n) => !n.read).length}
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1.5 px-2" title={`Battery: ${batteryLevel}%`}>
+          <Battery
+            size={18}
+            className={
+              batteryLevel <= 20 ? "text-red-400" : batteryLevel <= 50 ? "text-yellow-400" : "text-emerald-400"
+            }
+          />
+          <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
+            {batteryLevel}%
+          </span>
         </div>
 
         <div className="taskbar-clock" onClick={() => setCalendarOpen(!calendarOpen)}>
           <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
             <PopoverTrigger asChild>
-              <button className="flex flex-col items-end justify-center h-full px-3 py-1 rounded-lg hover:bg-white/5 transition-colors cursor-pointer border-none bg-transparent outline-none">
-                <div className="text-sm font-medium text-slate-200 tabular-nums leading-none mb-1">
+              <button
+                className="flex flex-col items-end justify-center h-full px-3 py-1 rounded-lg transition-colors cursor-pointer border-none outline-none"
+                style={{ background: "transparent" }}
+              >
+                <div
+                  className="text-sm font-medium tabular-nums leading-none mb-1"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   {format(currentTime, "HH:mm")}
                 </div>
-                <div className="text-[10px] font-medium text-slate-400 uppercase tracking-wider leading-none">
+                <div
+                  className="text-[10px] font-medium uppercase tracking-wider leading-none"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
                   {format(currentTime, "MMM dd")}
                 </div>
               </button>
@@ -1354,19 +1912,24 @@ const BlackIceShowcase = () => {
       <Dialog open={securityDialogOpen} onOpenChange={setSecurityDialogOpen}>
         <DialogContent className="security-dialog-content border-none sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-slate-100">
+            <DialogTitle className="flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
               <Shield className="text-emerald-400" size={20} />
               System Security
             </DialogTitle>
           </DialogHeader>
-          <div className="py-6 flex flex-col items-center justify-center min-h-[200px] relative overflow-hidden rounded-lg bg-black/20">
+          <div
+            className="py-6 flex flex-col items-center justify-center min-h-[200px] relative overflow-hidden rounded-lg"
+            style={{ background: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.05)" }}
+          >
             {securityScanning ? (
               <>
                 <div className="absolute inset-0 bg-emerald-500/5 animate-pulse" />
                 <div className="w-full absolute top-0 scan-line" />
                 <Shield size={64} className="text-emerald-500/50 animate-bounce mb-4" />
                 <div className="text-emerald-400 font-mono text-sm animate-pulse">SCANNING SYSTEM FILES...</div>
-                <div className="text-slate-500 text-xs mt-2 font-mono">Checking integrity...</div>
+                <div className="text-xs mt-2 font-mono" style={{ color: "var(--text-tertiary)" }}>
+                  Checking integrity...
+                </div>
               </>
             ) : securitySecure ? (
               <>
@@ -1375,14 +1938,32 @@ const BlackIceShowcase = () => {
                   <CheckCircle size={48} className="text-emerald-400" />
                 </div>
                 <h3 className="text-xl font-semibold text-emerald-400 mb-1">System Secure</h3>
-                <p className="text-slate-400 text-sm">No threats detected</p>
+                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                  No threats detected
+                </p>
                 <div className="mt-6 grid grid-cols-2 gap-4 w-full px-8">
-                  <div className="bg-white/5 p-3 rounded border border-white/5 text-center">
-                    <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Firewall</div>
+                  <div
+                    className="p-3 rounded text-center"
+                    style={{
+                      background: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+                      border: `1px solid ${isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`,
+                    }}
+                  >
+                    <div className="text-xs uppercase tracking-wider mb-1" style={{ color: "var(--text-tertiary)" }}>
+                      Firewall
+                    </div>
                     <div className="text-emerald-400 text-sm font-medium">Active</div>
                   </div>
-                  <div className="bg-white/5 p-3 rounded border border-white/5 text-center">
-                    <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Protection</div>
+                  <div
+                    className="p-3 rounded text-center"
+                    style={{
+                      background: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+                      border: `1px solid ${isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`,
+                    }}
+                  >
+                    <div className="text-xs uppercase tracking-wider mb-1" style={{ color: "var(--text-tertiary)" }}>
+                      Protection
+                    </div>
                     <div className="text-emerald-400 text-sm font-medium">Real-time</div>
                   </div>
                 </div>
