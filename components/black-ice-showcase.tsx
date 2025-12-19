@@ -93,14 +93,42 @@ const BlackIceShowcase = () => {
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [dashboardOpen, setDashboardOpen] = useState(false)
   const [visitedProjects, setVisitedProjects] = useState<Set<string>>(new Set())
-  const [sessionStartTime] = useState(new Date())
-  const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const [batteryLevel, setBatteryLevel] = useState(85)
+  const [batteryLevel, setBatteryLevel] = useState(100)
+  const [isCharging, setIsCharging] = useState(false)
   const [notifications, setNotifications] = useState([
     { id: 1, title: "Welcome to BlackICE OS", message: "Your system is ready", time: "Just now", read: false },
     { id: 2, title: "Security Scan Complete", message: "No threats found", time: "2m ago", read: false },
     { id: 3, title: "Weather Update", message: "Clear skies today", time: "5m ago", read: true },
   ])
+  const [sessionStartTime] = useState(new Date())
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "getBattery" in navigator) {
+      ;(navigator as any).getBattery().then((battery: any) => {
+        const updateBatteryInfo = () => {
+          setBatteryLevel(Math.round(battery.level * 100))
+          setIsCharging(battery.charging)
+        }
+
+        updateBatteryInfo()
+
+        battery.addEventListener("levelchange", updateBatteryInfo)
+        battery.addEventListener("chargingchange", updateBatteryInfo)
+
+        return () => {
+          battery.removeEventListener("levelchange", updateBatteryInfo)
+          battery.removeEventListener("chargingchange", updateBatteryInfo)
+        }
+      })
+    } else {
+      // Fallback for browsers without Battery API support
+      const interval = setInterval(() => {
+        setBatteryLevel((prev) => Math.max(prev - 1, 10))
+      }, 60000)
+      return () => clearInterval(interval)
+    }
+  }, [])
 
   useEffect(() => {
     if (activeUrl && activeUrl !== "https://black-ice-3dbk.onrender.com") {
@@ -1189,8 +1217,8 @@ const BlackIceShowcase = () => {
         <div className="nav-list">
           {/* Home Button */}
           <div
-            className={`project-card ${activeUrl === "https://black-ice-3dbk.onrender.com" ? "active" : ""}`}
-            onClick={() => handleProjectSelect("https://black-ice-3dbk.onrender.com", "BlackICE Academy")}
+            className={`project-card ${activeUrl === "https://blackice-ac.vercel.app/" ? "active" : ""}`}
+            onClick={() => handleProjectSelect("https://blackice-ac.vercel.app/", "BlackICE Academy")}
           >
             <div
               className="card-thumb-wrapper"
@@ -1204,8 +1232,8 @@ const BlackIceShowcase = () => {
               <Home color="var(--text-secondary)" size={18} />
             </div>
             <div className="card-info">
-              <div className="card-title">Home</div>
-              <div className="card-url">BlackICE Portal</div>
+              <div className="card-title">BlackICE Academy</div>
+              <div className="card-url">Official Portal</div>
             </div>
           </div>
 
@@ -1615,7 +1643,7 @@ const BlackIceShowcase = () => {
 
         <div
           className="taskbar-item"
-          onClick={() => handleProjectSelect("https://black-ice-3dbk.onrender.com", "BlackICE Portal")}
+          onClick={() => handleProjectSelect("https://blackice-ac.vercel.app/", "BlackICE Academy")}
           title="Home"
         >
           <Home size={20} color="var(--text-secondary)" />
@@ -1866,13 +1894,29 @@ const BlackIceShowcase = () => {
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 px-2" title={`Battery: ${batteryLevel}%`}>
-          <Battery
-            size={18}
-            className={
-              batteryLevel <= 20 ? "text-red-400" : batteryLevel <= 50 ? "text-yellow-400" : "text-emerald-400"
-            }
-          />
+        <div
+          className="flex items-center gap-1.5 px-2"
+          title={`Battery: ${batteryLevel}% ${isCharging ? "(Charging)" : ""}`}
+        >
+          <div className="relative flex items-center">
+            <Battery
+              size={18}
+              className={
+                isCharging
+                  ? "text-emerald-400"
+                  : batteryLevel <= 20
+                    ? "text-red-400"
+                    : batteryLevel <= 50
+                      ? "text-yellow-400"
+                      : "text-emerald-400"
+              }
+            />
+            {isCharging && (
+              <div className="absolute -right-1 -top-1">
+                <div className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              </div>
+            )}
+          </div>
           <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
             {batteryLevel}%
           </span>
