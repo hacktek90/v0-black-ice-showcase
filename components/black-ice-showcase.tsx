@@ -40,6 +40,7 @@ import {
   Battery,
   TrendingUp,
   Activity,
+  BatteryCharging,
 } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -102,6 +103,8 @@ const BlackIceShowcase = () => {
   ])
   const [sessionStartTime] = useState(new Date())
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+
+  const currentDate = format(currentTime, "MMM dd")
 
   useEffect(() => {
     if (typeof window !== "undefined" && "getBattery" in navigator) {
@@ -603,51 +606,95 @@ const BlackIceShowcase = () => {
         /* --- OS Taskbar/Dock --- */
         .os-taskbar {
           position: fixed;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 60px;
-          background: ${isDarkMode ? "rgba(19, 19, 26, 0.8)" : "rgba(255, 255, 255, 0.8)"};
-          backdrop-filter: blur(20px);
-          border-top: 1px solid var(--os-border);
+          bottom: 16px;
+          left: 50%;
+          transform: translateX(-50%);
+          height: auto;
+          background: ${
+            isDarkMode
+              ? "linear-gradient(180deg, rgba(30, 30, 40, 0.85) 0%, rgba(20, 20, 28, 0.95) 100%)"
+              : "linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.95) 100%)"
+          };
+          backdrop-filter: blur(24px) saturate(180%);
+          border: 1px solid ${isDarkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)"};
+          border-radius: 20px;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-          padding: 0 20px;
+          gap: 6px;
+          padding: 10px 16px;
           z-index: 1000;
+          box-shadow: ${
+            isDarkMode
+              ? "0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) inset"
+              : "0 8px 32px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.5) inset"
+          };
         }
 
         .taskbar-item {
-          width: 48px;
-          height: 48px;
-          background: var(--os-surface-elevated);
-          border: 1px solid var(--os-border);
+          width: 44px;
+          height: 44px;
+          background: transparent;
+          border: none;
           border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
           position: relative;
         }
 
         .taskbar-item:hover {
-          background: var(--os-accent);
-          transform: translateY(-4px);
-          box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+          background: ${isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)"};
+          /* updated to macOS-style hover scale and shift */
+          transform: translateY(-12px) scale(1.4);
+          z-index: 10;
+        }
+
+        /* added adjacent icon scaling for macOS-style dock effect */
+        .taskbar-item:hover + .taskbar-item,
+        .taskbar-item:has(+ .taskbar-item:hover) {
+          transform: translateY(-6px) scale(1.2);
+        }
+
+        .taskbar-item:active {
+          transform: translateY(-4px) scale(1.05);
         }
 
         .taskbar-item.active::after {
           content: '';
           position: absolute;
-          bottom: -8px;
+          bottom: -6px;
           left: 50%;
           transform: translateX(-50%);
-          width: 4px;
-          height: 4px;
+          width: 5px;
+          height: 5px;
           background: var(--os-accent);
           border-radius: 50%;
+          box-shadow: 0 0 8px var(--os-accent);
+        }
+
+        .taskbar-divider {
+          width: 1px;
+          height: 28px;
+          background: ${isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)"};
+          margin: 0 6px;
+        }
+
+        .taskbar-widget {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
+          border-radius: 12px;
+          background: ${isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)"};
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .taskbar-widget:hover {
+          background: ${isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)"};
         }
 
         /* --- Sidebar --- */
@@ -1637,248 +1684,40 @@ const BlackIceShowcase = () => {
 
       {/* Taskbar */}
       <div className="os-taskbar">
+        {/* Main App Icons */}
         <div className="taskbar-item" onClick={handleTaskbarSearch} title="Search">
-          <Search size={20} color="var(--text-secondary)" />
+          <Search size={22} style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }} />
         </div>
 
-        <div
-          className="taskbar-item"
-          onClick={() => handleProjectSelect("https://blackice-ac.vercel.app/", "BlackICE Academy")}
-          title="Home"
-        >
-          <Home size={20} color="var(--text-secondary)" />
-        </div>
-
-        <div className="taskbar-item" onClick={() => setSidebarOpen(true)} title="Favorites">
-          <Star size={20} color="var(--text-secondary)" />
+        <div className="taskbar-item" onClick={() => setSidebarOpen(true)} title="Apps">
+          <Star size={22} style={{ color: "#facc15" }} />
         </div>
 
         <div className="taskbar-item" onClick={() => setDashboardOpen(!dashboardOpen)} title="Dashboard">
-          <BarChart3 size={20} color="var(--text-secondary)" />
+          <BarChart3 size={22} style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }} />
         </div>
 
+        <div className="taskbar-divider" />
+
+        {/* System Controls */}
         <div
           className="taskbar-item"
           onClick={() => setIsDarkMode(!isDarkMode)}
           title={isDarkMode ? "Light Mode" : "Dark Mode"}
         >
           {isDarkMode ? (
-            <Sun size={20} color="var(--text-secondary)" />
+            <Sun size={20} style={{ color: "#fbbf24" }} />
           ) : (
-            <Moon size={20} color="var(--text-secondary)" />
+            <Moon size={20} style={{ color: "#6366f1" }} />
           )}
         </div>
 
         <div className="taskbar-item" onClick={() => setStartMenuOpen(!startMenuOpen)} title="Settings">
-          <Settings size={20} color="var(--text-secondary)" />
+          <Settings size={20} style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }} />
         </div>
 
-        {weather && (
-          <div
-            className="flex items-center gap-2 px-3 py-1 mx-2 rounded-lg"
-            style={{
-              background: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
-              border: `1px solid ${isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`,
-            }}
-          >
-            {weather.condition === "Clear" && <Sun size={16} className="text-yellow-400" />}
-            {weather.condition === "Cloudy" && <Cloud size={16} className="text-slate-400" />}
-            {weather.condition === "Rain" && <CloudRain size={16} className="text-blue-400" />}
-            {weather.condition === "Storm" && <CloudRain size={16} className="text-purple-400" />}
-            <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
-              {weather.temp}°C
-            </span>
-          </div>
-        )}
-
-        {news && (
-          <>
-            <div
-              className="flex items-center gap-2 px-3 py-1.5 mx-2 rounded-lg max-w-[220px] overflow-hidden cursor-pointer transition-all duration-200"
-              style={{
-                background: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
-                border: `1px solid ${isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
-              }}
-              onClick={() => setNewsExpanded(true)}
-            >
-              <Newspaper size={14} className="text-cyan-400 shrink-0" />
-              <div
-                className="text-xs font-medium truncate overflow-hidden whitespace-nowrap"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                {newsList[currentNewsIndex]?.title || news}
-              </div>
-            </div>
-
-            {newsExpanded && (
-              <div
-                className="fixed inset-0 z-[100] flex items-end justify-end p-4 pb-16"
-                onClick={() => setNewsExpanded(false)}
-              >
-                {/* OS-style window container */}
-                <div
-                  className="w-[420px] max-h-[600px] flex flex-col rounded-xl overflow-hidden shadow-2xl shadow-black/50"
-                  style={{
-                    background: isDarkMode
-                      ? "linear-gradient(180deg, #0d0d12 0%, #0a0a0f 100%)"
-                      : "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
-                    border: `1px solid ${isDarkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)"}`,
-                    animation: "slideUp 0.25s ease-out",
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {/* Window Title Bar */}
-                  <div
-                    className="flex items-center justify-between px-4 py-3"
-                    style={{
-                      background: isDarkMode
-                        ? "linear-gradient(180deg, #18181f 0%, #13131a 100%)"
-                        : "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
-                      borderBottom: `1px solid ${isDarkMode ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)"}`,
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      {/* App Icon */}
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)" }}
-                      >
-                        <Newspaper size={16} className="text-white" />
-                      </div>
-                      <div>
-                        <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                          News
-                        </h2>
-                        <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
-                          BBC World
-                        </p>
-                      </div>
-                    </div>
-                    {/* Window Controls */}
-                    <div className="flex items-center gap-1">
-                      <button
-                        className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        <Minus size={14} />
-                      </button>
-                      <button
-                        className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        <Square size={12} />
-                      </button>
-                      <button
-                        onClick={() => setNewsExpanded(false)}
-                        className="w-7 h-7 rounded-md flex items-center justify-center transition-colors hover:bg-red-500/20 hover:text-red-400"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Featured Story */}
-                  {newsList[0] && (
-                    <a
-                      href={newsList[0].link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="relative block mx-3 mt-3 rounded-lg overflow-hidden group"
-                      style={{
-                        background: isDarkMode
-                          ? "linear-gradient(135deg, #1a1a24 0%, #13131a 100%)"
-                          : "linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)",
-                      }}
-                    >
-                      <div className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded bg-cyan-500/20 text-cyan-400">
-                            Top Story
-                          </span>
-                          <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
-                            {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                          </span>
-                        </div>
-                        <h3
-                          className="text-sm font-medium leading-relaxed group-hover:text-cyan-400 transition-colors"
-                          style={{ color: "var(--text-primary)" }}
-                        >
-                          {newsList[0].title}
-                        </h3>
-                      </div>
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
-                    </a>
-                  )}
-
-                  {/* News List */}
-                  <div className="flex-1 overflow-y-auto px-3 py-2 news-scroll">
-                    <div className="space-y-1">
-                      {newsList.slice(1).map((item, idx) => (
-                        <a
-                          key={idx}
-                          href={item.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-3 rounded-lg transition-colors group"
-                          style={{ background: "transparent" }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.background = isDarkMode
-                              ? "rgba(255,255,255,0.05)"
-                              : "rgba(0,0,0,0.05)")
-                          }
-                          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                        >
-                          <div
-                            className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold shrink-0"
-                            style={{
-                              background: isDarkMode ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.03)",
-                              color: "var(--text-tertiary)",
-                            }}
-                          >
-                            {idx + 2}
-                          </div>
-                          <p
-                            className="text-xs leading-relaxed flex-1 transition-colors"
-                            style={{ color: "var(--text-secondary)" }}
-                          >
-                            {item.title}
-                          </p>
-                          <ChevronRight
-                            size={14}
-                            className="shrink-0 opacity-0 group-hover:opacity-100 transition-all text-cyan-400"
-                          />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div
-                    className="px-4 py-2 flex items-center justify-between"
-                    style={{
-                      background: isDarkMode ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.05)",
-                      borderTop: `1px solid ${isDarkMode ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.04)"}`,
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                      <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
-                        Live updates
-                      </span>
-                    </div>
-                    <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
-                      {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        <div className="taskbar-item" onClick={handleSecurityClick} title="Security Status">
-          <Shield className="text-emerald-400" size={18} />
+        <div className="taskbar-item" onClick={handleSecurityClick} title="Security">
+          <Shield size={20} style={{ color: "#22c55e" }} />
         </div>
 
         <div
@@ -1886,7 +1725,7 @@ const BlackIceShowcase = () => {
           onClick={() => setNotificationsOpen(!notificationsOpen)}
           title="Notifications"
         >
-          <Bell size={18} color="var(--text-secondary)" />
+          <Bell size={20} style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }} />
           {notifications.filter((n) => !n.read).length > 0 && (
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">
               {notifications.filter((n) => !n.read).length}
@@ -1894,63 +1733,249 @@ const BlackIceShowcase = () => {
           )}
         </div>
 
-        <div
-          className="flex items-center gap-1.5 px-2"
-          title={`Battery: ${batteryLevel}% ${isCharging ? "(Charging)" : ""}`}
-        >
-          <div className="relative flex items-center">
-            <Battery
-              size={18}
-              className={
-                isCharging
-                  ? "text-emerald-400"
-                  : batteryLevel <= 20
-                    ? "text-red-400"
-                    : batteryLevel <= 50
-                      ? "text-yellow-400"
-                      : "text-emerald-400"
-              }
-            />
-            {isCharging && (
-              <div className="absolute -right-1 -top-1">
-                <div className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              </div>
-            )}
+        <div className="taskbar-divider" />
+
+        {/* Widgets Section */}
+        {weather && (
+          <div className="taskbar-widget">
+            {weather.condition === "Clear" && <Sun size={16} className="text-yellow-400" />}
+            {weather.condition === "Cloudy" && <Cloud size={16} className="text-slate-400" />}
+            {weather.condition === "Rain" && <CloudRain size={16} className="text-blue-400" />}
+            {weather.condition === "Storm" && <CloudRain size={16} className="text-purple-400" />}
+            <span className="text-xs font-medium" style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}>
+              {weather.temp}°
+            </span>
           </div>
-          <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
+        )}
+
+        {news && (
+          <div className="taskbar-widget max-w-[180px] overflow-hidden" onClick={() => setNewsExpanded(true)}>
+            <Newspaper size={14} className="text-cyan-400 shrink-0" />
+            <div className="text-xs font-medium truncate" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>
+              {newsList[currentNewsIndex]?.title || news}
+            </div>
+          </div>
+        )}
+
+        {/* Battery & Time */}
+        <div className="taskbar-widget">
+          {isCharging ? (
+            <BatteryCharging
+              size={16}
+              className={batteryLevel > 60 ? "text-green-400" : batteryLevel > 20 ? "text-yellow-400" : "text-red-400"}
+            />
+          ) : (
+            <Battery
+              size={16}
+              className={batteryLevel > 60 ? "text-green-400" : batteryLevel > 20 ? "text-yellow-400" : "text-red-400"}
+            />
+          )}
+          <span className="text-xs font-medium" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>
             {batteryLevel}%
           </span>
         </div>
 
-        <div className="taskbar-clock" onClick={() => setCalendarOpen(!calendarOpen)}>
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-            <PopoverTrigger asChild>
-              <button
-                className="flex flex-col items-end justify-center h-full px-3 py-1 rounded-lg transition-colors cursor-pointer border-none outline-none"
-                style={{ background: "transparent" }}
-              >
-                <div
-                  className="text-sm font-medium tabular-nums leading-none mb-1"
-                  style={{ color: "var(--text-secondary)" }}
-                >
+        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+          <PopoverTrigger asChild>
+            <div className="taskbar-widget">
+              <div className="text-right">
+                <div className="text-xs font-semibold" style={{ color: isDarkMode ? "#e2e8f0" : "#1e293b" }}>
                   {format(currentTime, "HH:mm")}
                 </div>
+                <div className="text-[10px]" style={{ color: isDarkMode ? "#64748b" : "#94a3b8" }}>
+                  {currentDate}
+                </div>
+              </div>
+            </div>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-auto p-0 border-0"
+            align="end"
+            side="top"
+            sideOffset={16}
+            style={{
+              background: isDarkMode
+                ? "linear-gradient(180deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 28, 0.98) 100%)"
+                : "linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 1) 100%)",
+              backdropFilter: "blur(24px)",
+              border: `1px solid ${isDarkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)"}`,
+              borderRadius: "16px",
+              boxShadow: isDarkMode ? "0 16px 48px rgba(0, 0, 0, 0.5)" : "0 16px 48px rgba(0, 0, 0, 0.15)",
+            }}
+          >
+            <Calendar
+              mode="single"
+              selected={currentTime}
+              className="p-3"
+              classNames={{
+                day_selected: "bg-cyan-500 text-white hover:bg-cyan-600",
+                day_today: "bg-cyan-500/20 text-cyan-400",
+              }}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* News Expanded Modal */}
+      {newsExpanded && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-end p-4 pb-16">
+          {/* OS-style window container */}
+          <div
+            className="w-[420px] max-h-[600px] flex flex-col rounded-xl overflow-hidden shadow-2xl shadow-black/50"
+            style={{
+              background: isDarkMode
+                ? "linear-gradient(180deg, #0d0d12 0%, #0a0a0f 100%)"
+                : "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
+              border: `1px solid ${isDarkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)"}`,
+              animation: "slideUp 0.25s ease-out",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Window Title Bar */}
+            <div
+              className="flex items-center justify-between px-4 py-3"
+              style={{
+                background: isDarkMode
+                  ? "linear-gradient(180deg, #18181f 0%, #13131a 100%)"
+                  : "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
+                borderBottom: `1px solid ${isDarkMode ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)"}`,
+              }}
+            >
+              <div className="flex items-center gap-3">
+                {/* App Icon */}
                 <div
-                  className="text-[10px] font-medium uppercase tracking-wider leading-none"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)" }}
+                >
+                  <Newspaper size={16} className="text-white" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                    News
+                  </h2>
+                  <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                    BBC World
+                  </p>
+                </div>
+              </div>
+              {/* Window Controls */}
+              <div className="flex items-center gap-1">
+                <button
+                  className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
                   style={{ color: "var(--text-tertiary)" }}
                 >
-                  {format(currentTime, "MMM dd")}
-                </div>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 border-none bg-transparent shadow-none" align="end" sideOffset={12}>
-              <div className="calendar-popover-content rounded-xl p-4">
-                <Calendar mode="single" selected={currentTime} className="rounded-md" />
+                  <Minus size={14} />
+                </button>
+                <button
+                  className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  <Square size={12} />
+                </button>
+                <button
+                  onClick={() => setNewsExpanded(false)}
+                  className="w-7 h-7 rounded-md flex items-center justify-center transition-colors hover:bg-red-500/20 hover:text-red-400"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  <X size={14} />
+                </button>
               </div>
-            </PopoverContent>
-          </Popover>
+            </div>
+
+            {/* Featured Story */}
+            {newsList[0] && (
+              <a
+                href={newsList[0].link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative block mx-3 mt-3 rounded-lg overflow-hidden group"
+                style={{
+                  background: isDarkMode
+                    ? "linear-gradient(135deg, #1a1a24 0%, #13131a 100%)"
+                    : "linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)",
+                }}
+              >
+                <div className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded bg-cyan-500/20 text-cyan-400">
+                      Top Story
+                    </span>
+                    <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                      {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                  </div>
+                  <h3
+                    className="text-sm font-medium leading-relaxed group-hover:text-cyan-400 transition-colors"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {newsList[0].title}
+                  </h3>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+              </a>
+            )}
+
+            {/* News List */}
+            <div className="flex-1 overflow-y-auto px-3 py-2 news-scroll">
+              <div className="space-y-1">
+                {newsList.slice(1).map((item, idx) => (
+                  <a
+                    key={idx}
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-lg transition-colors group"
+                    style={{ background: "transparent" }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)")
+                    }
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <div
+                      className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold shrink-0"
+                      style={{
+                        background: isDarkMode ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.03)",
+                        color: "var(--text-tertiary)",
+                      }}
+                    >
+                      {idx + 2}
+                    </div>
+                    <p
+                      className="text-xs leading-relaxed flex-1 transition-colors"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      {item.title}
+                    </p>
+                    <ChevronRight
+                      size={14}
+                      className="shrink-0 opacity-0 group-hover:opacity-100 transition-all text-cyan-400"
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div
+              className="px-4 py-2 flex items-center justify-between"
+              style={{
+                background: isDarkMode ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.05)",
+                borderTop: `1px solid ${isDarkMode ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.04)"}`,
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                  Live updates
+                </span>
+              </div>
+              <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Security Dialog */}
       <Dialog open={securityDialogOpen} onOpenChange={setSecurityDialogOpen}>
