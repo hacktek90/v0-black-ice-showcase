@@ -9,6 +9,7 @@ import {
   Plus,
   Star,
   Home,
+  Share2,
   ChevronRight,
   Menu,
   X,
@@ -69,8 +70,8 @@ const initFirebase = () => {
 const BlackIceShowcase = () => {
   const [isMobile, setIsMobile] = useState(false)
   const [projects, setProjects] = useState<any[]>([])
-  const [activeUrl, setActiveUrl] = useState("https://black-ice-3dbk.onrender.com")
-  const [activeTitle, setActiveTitle] = useState("Home")
+  const [activeUrl, setActiveUrl] = useState("")
+  const [activeTitle, setActiveTitle] = useState("Desktop")
   const [favorites, setFavorites] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -105,6 +106,21 @@ const BlackIceShowcase = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
 
   const currentDate = format(currentTime, "MMM dd")
+
+  // Parse URL parameters to auto-open projects
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const projectParam = params.get("project")
+      if (projectParam && projects.length > 0) {
+        const decodedProjectName = decodeURIComponent(projectParam)
+        const foundProject = projects.find((p) => p.title === decodedProjectName)
+        if (foundProject) {
+          handleProjectSelect(foundProject.url, foundProject.title)
+        }
+      }
+    }
+  }, [projects])
 
   useEffect(() => {
     if (typeof window !== "undefined" && "getBattery" in navigator) {
@@ -273,6 +289,16 @@ const BlackIceShowcase = () => {
     }
     setFavorites(newFavs)
     localStorage.setItem("bi_favorites", JSON.stringify(newFavs))
+  }
+
+  const shareProject = (e: React.MouseEvent, projectTitle: string) => {
+    e.stopPropagation()
+    const baseUrl = typeof window !== "undefined" ? window.location.origin + window.location.pathname : ""
+    const shareUrl = `${baseUrl}?project=${encodeURIComponent(projectTitle)}`
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      // Show toast notification
+      console.log("[v0] Copied share link to clipboard:", shareUrl)
+    })
   }
 
   useEffect(() => {
@@ -880,8 +906,24 @@ const BlackIceShowcase = () => {
           transition: opacity 0.2s;
           color: var(--text-tertiary);
         }
-        .project-card:hover .fav-btn, .fav-btn.active { opacity: 1; }
-        .fav-btn.active { color: var(--warning); fill: var(--warning); }
+  .project-card:hover .fav-btn, .fav-btn.active { opacity: 1; }
+  .fav-btn.active { color: var(--warning); fill: var(--warning); }
+
+  .share-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--text-tertiary);
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+  }
+
+  .project-card:hover .share-btn { opacity: 1; }
+  .share-btn:hover { color: var(--os-accent); }
 
         /* --- Main Content --- */
         .main-view {
@@ -1262,28 +1304,6 @@ const BlackIceShowcase = () => {
         </div>
 
         <div className="nav-list">
-          {/* Home Button */}
-          <div
-            className={`project-card ${activeUrl === "https://blackice-ac.vercel.app/" ? "active" : ""}`}
-            onClick={() => handleProjectSelect("https://blackice-ac.vercel.app/", "BlackICE Academy")}
-          >
-            <div
-              className="card-thumb-wrapper"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "var(--os-surface-elevated)",
-              }}
-            >
-              <Home color="var(--text-secondary)" size={18} />
-            </div>
-            <div className="card-info">
-              <div className="card-title">BlackICE Academy</div>
-              <div className="card-url">Official Portal</div>
-            </div>
-          </div>
-
           {/* Favorites Section */}
           {favorites.length > 0 && (
             <>
@@ -1305,13 +1325,16 @@ const BlackIceShowcase = () => {
                         onError={(e) => (e.currentTarget.src = "https://via.placeholder.com/40/1a1a24/64748b?text=?")}
                       />
                     </div>
-                    <div className="card-info">
-                      <div className="card-title">{p.title}</div>
-                      <div className="card-url">{getHostname(p.url)}</div>
-                    </div>
-                    <button className="fav-btn active" onClick={(e) => toggleFavorite(e, p.id)}>
-                      <Star size={14} fill="var(--warning)" />
-                    </button>
+                <div className="card-info">
+                  <div className="card-title">{p.title || "Untitled"}</div>
+                  <div className="card-url">{getHostname(p.url)}</div>
+                </div>
+                <button className="share-btn" onClick={(e) => shareProject(e, p.title || "")}>
+                  <Share2 size={14} />
+                </button>
+                <button className="fav-btn active" onClick={(e) => toggleFavorite(e, p.id)}>
+                  <Star size={14} fill="var(--warning)" />
+                </button>
                   </div>
                 ))}
             </>
@@ -1341,6 +1364,9 @@ const BlackIceShowcase = () => {
                   <div className="card-title">{p.title || "Untitled"}</div>
                   <div className="card-url">{getHostname(p.url)}</div>
                 </div>
+                <button className="share-btn" onClick={(e) => shareProject(e, p.title || "")}>
+                  <Share2 size={14} />
+                </button>
                 <button
                   className={`fav-btn ${favorites.includes(p.id) ? "active" : ""}`}
                   onClick={(e) => toggleFavorite(e, p.id)}
@@ -1364,16 +1390,9 @@ const BlackIceShowcase = () => {
                 </button>
               </div>
 
-              <div className="window-title">
-                <span>{activeTitle}</span>
-                <ChevronRight size={12} />
-                <div className="flex items-center gap-2 text-slate-500">
-                  <div className="w-4 h-4 rounded border border-slate-700 bg-slate-800 flex items-center justify-center">
-                    <div className="w-2 h-2 bg-blue-500 rounded-sm" />
-                  </div>
-                  <span>{getHostname(activeUrl)}</span>
-                </div>
-              </div>
+        <div className="window-title">
+          <span>{activeTitle}</span>
+        </div>
 
               <div className="window-controls-right">
                 <button className="window-btn" onClick={handleMinimize}>
@@ -1390,13 +1409,54 @@ const BlackIceShowcase = () => {
 
             {!isMinimized && (
               <div className="iframe-wrapper">
-                <iframe
-                  src={activeUrl}
-                  className="web-frame"
-                  title={activeTitle}
-                  allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; clipboard-read; clipboard-write; fullscreen"
-                  allowFullScreen
-                />
+                {activeUrl ? (
+                  <iframe
+                    src={activeUrl}
+                    className="web-frame"
+                    title={activeTitle}
+                    allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; clipboard-read; clipboard-write; fullscreen"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "var(--os-bg)",
+                      gap: "2rem",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "3rem",
+                        color: "var(--os-accent)",
+                        opacity: 0.3,
+                      }}
+                    >
+                      <Monitor size={80} />
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <h1
+                        style={{
+                          fontSize: "2rem",
+                          fontWeight: "300",
+                          color: "var(--text-secondary)",
+                          marginBottom: "0.5rem",
+                          letterSpacing: "1px",
+                        }}
+                      >
+                        Open any project
+                      </h1>
+                      <p style={{ color: "var(--text-tertiary)", fontSize: "0.95rem" }}>
+                        Select a project from the sidebar to get started
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {isMinimized && (
