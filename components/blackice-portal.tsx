@@ -130,11 +130,13 @@ export default function BlackICEPortal() {
                   ))}
                 </select>
 
-                <img
-                  src={favicon}
-                  alt="Search Engine"
-                  className="w-5 h-5 rounded transition-transform duration-200 group-hover:scale-110"
-                />
+                {favicon && (
+                  <img
+                    src={favicon}
+                    alt="Search Engine"
+                    className="w-5 h-5 rounded transition-transform duration-200 group-hover:scale-110"
+                  />
+                )}
 
                 <ChevronDown size={12} className="ml-2 text-[#a1a1aa]" />
               </div>
