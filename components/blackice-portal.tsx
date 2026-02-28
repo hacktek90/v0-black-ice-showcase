@@ -44,7 +44,21 @@ export default function BlackICEPortal() {
   const updateUI = () => {
     const engine = searchEngines[selectedEngine]
     setShowAiBtn(engine.aiUrl !== "")
-    setFavicon(`https://www.google.com/s2/favicons?domain=${engine.domain}&sz=32`)
+    
+    // Fetch favicon with timeout and error handling
+    const faviconUrl = `https://www.google.com/s2/favicons?domain=${engine.domain}&sz=32`
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+    
+    fetch(faviconUrl, { signal: controller.signal })
+      .then(res => {
+        clearTimeout(timeoutId)
+        if (res.ok) setFavicon(faviconUrl)
+      })
+      .catch(() => {
+        clearTimeout(timeoutId)
+        setFavicon("") // Silently fail, favicon is optional
+      })
   }
 
   const handleSearch = (type: "standard" | "ai") => {
