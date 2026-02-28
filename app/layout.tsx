@@ -9,8 +9,8 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 const _interTight = Inter_Tight({ subsets: ["latin"], variable: "--font-inter-tight" })
 
 export const metadata: Metadata = {
-  title: "BOS",
-  description: "Created with v0",
+  title: "BlackICE Portal — AI, Productivity & Web Tools Platform",
+  description: "The operating system for your web productivity. Seamlessly integrated AI, Utilities, and Workspace tools.",
   generator: "v0.app",
   icons: {
     icon: [
@@ -37,8 +37,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className={`font-sans antialiased`}>
+    <html lang="en" className={_interTight.variable}>
+      <body className={`font-sans antialiased bg-[#09090b]`}>
         {children}
         <Analytics />
       </body>
