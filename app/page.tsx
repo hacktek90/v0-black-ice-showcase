@@ -1,5 +1,5 @@
-import BlackIceShowcase from "@/components/black-ice-showcase"
+import BlackICEPortal from "@/components/blackice-portal"
 
 export default function Home() {
-  return <BlackIceShowcase />
+  return <BlackICEPortal />
 }

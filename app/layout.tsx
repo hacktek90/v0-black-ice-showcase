@@ -1,5 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
+import Script from "next/script"
 import { Geist, Geist_Mono, Inter_Tight } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
@@ -9,8 +10,8 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 const _interTight = Inter_Tight({ subsets: ["latin"], variable: "--font-inter-tight" })
 
 export const metadata: Metadata = {
-  title: "BOS",
-  description: "Created with v0",
+  title: "BlackICE Portal — AI, Productivity & Web Tools Platform",
+  description: "The operating system for your web productivity. Seamlessly integrated AI, Utilities, and Workspace tools.",
   generator: "v0.app",
   icons: {
     icon: [
@@ -37,8 +38,18 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className={`font-sans antialiased`}>
+    <html lang="en" className={_interTight.variable}>
+      <head>
+        <Script 
+          src="https://blackice-ac.vercel.app/test/portal.js" 
+          strategy="afterInteractive"
+        />
+        <Script 
+          src="https://blackice-ac.vercel.app/test/darky.js" 
+          strategy="afterInteractive"
+        />
+      </head>
+      <body className={`font-sans antialiased bg-[#09090b]`}>
         {children}
         <Analytics />
       </body>

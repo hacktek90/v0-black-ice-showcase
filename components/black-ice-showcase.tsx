@@ -17,6 +17,9 @@ import {
   Maximize2,
   XCircle,
   Power,
+  Maximize,
+  Layout,
+  CheckIcon,
   RefreshCw,
   Monitor,
   Smartphone,
@@ -97,6 +100,10 @@ const BlackIceShowcase = () => {
   const [visitedProjects, setVisitedProjects] = useState<Set<string>>(new Set())
   const [batteryLevel, setBatteryLevel] = useState(100)
   const [isCharging, setIsCharging] = useState(false)
+  const [isSplitView, setIsSplitView] = useState(false)
+  const [splitViewUrl, setSplitViewUrl] = useState("")
+  const [splitViewTitle, setSplitViewTitle] = useState("")
+  const [showCopyConfirm, setShowCopyConfirm] = useState(false)
   const [notifications, setNotifications] = useState([
     { id: 1, title: "Welcome to BlackICE OS", message: "Your system is ready", time: "Just now", read: false },
     { id: 2, title: "Security Scan Complete", message: "No threats found", time: "2m ago", read: false },
@@ -296,9 +303,25 @@ const BlackIceShowcase = () => {
     const baseUrl = typeof window !== "undefined" ? window.location.origin + window.location.pathname : ""
     const shareUrl = `${baseUrl}?project=${encodeURIComponent(projectTitle)}`
     navigator.clipboard.writeText(shareUrl).then(() => {
-      // Show toast notification
-      console.log("[v0] Copied share link to clipboard:", shareUrl)
+      setShowCopyConfirm(true)
+      setTimeout(() => setShowCopyConfirm(false), 2000)
     })
+  }
+
+  const handleFullScreen = () => {
+    if (typeof window !== "undefined") {
+      if (document.fullscreenElement) {
+        document.exitFullscreen()
+      } else {
+        document.documentElement.requestFullscreen()
+      }
+    }
+  }
+
+  const handleSplitView = (url: string, title: string) => {
+    setSplitViewUrl(url)
+    setSplitViewTitle(title)
+    setIsSplitView(true)
   }
 
   useEffect(() => {
@@ -925,6 +948,22 @@ const BlackIceShowcase = () => {
   .project-card:hover .share-btn { opacity: 1; }
   .share-btn:hover { color: var(--os-accent); }
 
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .window-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
         /* --- Main Content --- */
         .main-view {
           flex: 1;
@@ -932,6 +971,7 @@ const BlackIceShowcase = () => {
           flex-direction: column;
           position: relative;
           background: var(--os-bg);
+          padding-bottom: 100px;
           width: 100%;
           height: calc(100vh - 60px);
         }
@@ -1394,69 +1434,145 @@ const BlackIceShowcase = () => {
           <span>{activeTitle}</span>
         </div>
 
-              <div className="window-controls-right">
-                <button className="window-btn" onClick={handleMinimize}>
-                  <Minimize2 size={14} />
-                </button>
-                <button className="window-btn" onClick={handleMaximize}>
-                  <Maximize2 size={14} />
-                </button>
-                <button className="window-btn close" onClick={handleClose}>
-                  <XCircle size={14} />
-                </button>
-              </div>
+            <div className="window-controls-right">
+              <button className="window-btn" onClick={handleMinimize} title="Minimize">
+                <Minimize2 size={14} />
+              </button>
+              <button className="window-btn" onClick={() => handleSplitView(activeUrl, activeTitle)} title="Split View" disabled={!activeUrl}>
+                <Layout size={14} />
+              </button>
+              <button className="window-btn" onClick={handleFullScreen} title="Fullscreen">
+                <Maximize size={14} />
+              </button>
+              <button className="window-btn" onClick={handleMaximize} title="Maximize">
+                <Maximize2 size={14} />
+              </button>
+              <button className="window-btn close" onClick={handleClose}>
+                <XCircle size={14} />
+              </button>
+            </div>
             </header>
 
             {!isMinimized && (
-              <div className="iframe-wrapper">
-                {activeUrl ? (
-                  <iframe
-                    src={activeUrl}
-                    className="web-frame"
-                    title={activeTitle}
-                    allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; clipboard-read; clipboard-write; fullscreen"
-                    allowFullScreen
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: "var(--os-bg)",
-                      gap: "2rem",
-                    }}
-                  >
+              <div
+                style={{
+                  display: "flex",
+                  gap: isSplitView ? "1px" : "0",
+                  height: "100%",
+                  flex: 1,
+                  background: isSplitView ? "var(--os-surface)" : "transparent",
+                }}
+              >
+                <div className="iframe-wrapper" style={{ flex: isSplitView ? 1 : "1 1 100%" }}>
+                  {activeUrl ? (
+                    <iframe
+                      src={activeUrl}
+                      className="web-frame"
+                      title={activeTitle}
+                      allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; clipboard-read; clipboard-write; fullscreen"
+                      allowFullScreen
+                    />
+                  ) : (
                     <div
                       style={{
-                        fontSize: "3rem",
-                        color: "var(--os-accent)",
-                        opacity: 0.3,
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "var(--os-bg)",
+                        gap: "2rem",
                       }}
                     >
-                      <Monitor size={80} />
-                    </div>
-                    <div style={{ textAlign: "center" }}>
-                      <h1
+                      <div
                         style={{
-                          fontSize: "2rem",
-                          fontWeight: "300",
-                          color: "var(--text-secondary)",
-                          marginBottom: "0.5rem",
-                          letterSpacing: "1px",
+                          fontSize: "3rem",
+                          color: "var(--os-accent)",
+                          opacity: 0.3,
                         }}
                       >
-                        Open any project
-                      </h1>
-                      <p style={{ color: "var(--text-tertiary)", fontSize: "0.95rem" }}>
-                        Select a project from the sidebar to get started
-                      </p>
+                        <Monitor size={80} />
+                      </div>
+                      <div style={{ textAlign: "center" }}>
+                        <h1
+                          style={{
+                            fontSize: "2rem",
+                            fontWeight: "300",
+                            color: "var(--text-secondary)",
+                            marginBottom: "0.5rem",
+                            letterSpacing: "1px",
+                          }}
+                        >
+                          Open any project
+                        </h1>
+                        <p style={{ color: "var(--text-tertiary)", fontSize: "0.95rem" }}>
+                          Select a project from the sidebar to get started
+                        </p>
+                      </div>
                     </div>
+                  )}
+                </div>
+
+                {isSplitView && splitViewUrl && (
+                  <div className="iframe-wrapper" style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "0.5rem 0.75rem",
+                        borderBottom: "1px solid var(--os-border)",
+                        background: "var(--os-surface)",
+                        fontSize: "0.85rem",
+                        color: "var(--text-secondary)",
+                      }}
+                    >
+                      <span>{splitViewTitle}</span>
+                      <button
+                        onClick={() => setIsSplitView(false)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "var(--text-tertiary)",
+                          cursor: "pointer",
+                          padding: "4px",
+                        }}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                    <iframe
+                      src={splitViewUrl}
+                      className="web-frame"
+                      title={splitViewTitle}
+                      allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; clipboard-read; clipboard-write; fullscreen"
+                      allowFullScreen
+                    />
                   </div>
                 )}
+              </div>
+            )}
+
+            {showCopyConfirm && (
+              <div
+                style={{
+                  position: "fixed",
+                  bottom: "85px",
+                  right: "20px",
+                  background: "rgba(0, 0, 0, 0.9)",
+                  color: "var(--os-accent)",
+                  padding: "0.75rem 1rem",
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  zIndex: 10000,
+                  animation: "slideUp 0.3s ease-out",
+                }}
+              >
+                <CheckIcon size={16} />
+                <span>Link copied to clipboard!</span>
               </div>
             )}
             {isMinimized && (
