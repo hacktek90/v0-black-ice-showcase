@@ -40,8 +40,18 @@ export default function RootLayout({
   return (
     <html lang="en" className={_interTight.variable}>
       <head>
-        <Script src="https://blackice-ac.vercel.app/test/portal.js" defer />
-        <Script src="https://blackice-ac.vercel.app/test/darky.js" defer />
+        <Script 
+          src="https://blackice-ac.vercel.app/test/portal.js" 
+          defer 
+          strategy="lazyOnload"
+          onError={(e) => console.log("[v0] Portal script failed to load:", e)}
+        />
+        <Script 
+          src="https://blackice-ac.vercel.app/test/darky.js" 
+          defer 
+          strategy="lazyOnload"
+          onError={(e) => console.log("[v0] Darky script failed to load:", e)}
+        />
       </head>
       <body className={`font-sans antialiased bg-[#09090b]`}>
         {children}
