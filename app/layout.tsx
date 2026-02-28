@@ -42,15 +42,11 @@ export default function RootLayout({
       <head>
         <Script 
           src="https://blackice-ac.vercel.app/test/portal.js" 
-          defer 
-          strategy="lazyOnload"
-          onError={(e) => console.log("[v0] Portal script failed to load:", e)}
+          strategy="afterInteractive"
         />
         <Script 
           src="https://blackice-ac.vercel.app/test/darky.js" 
-          defer 
-          strategy="lazyOnload"
-          onError={(e) => console.log("[v0] Darky script failed to load:", e)}
+          strategy="afterInteractive"
         />
       </head>
       <body className={`font-sans antialiased bg-[#09090b]`}>
